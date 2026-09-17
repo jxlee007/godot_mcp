@@ -97,6 +97,15 @@ godot-mcp
 | `toggle_movie_maker` | Edit project.godot to enable/disable Movie Maker mode |
 | `run_headless_diagnostics` | Validate imports, UIDs, shader entry points via Godot CLI |
 
+## MCP Resources
+
+The server exposes read-only resource URIs that AI models and MCP clients can inspect directly:
+
+| Resource URI | Description |
+|---|---|
+| `godot://engine/operations_template` | Complete raw source code of the underlying `godot_operations.gd` engine for parameter and structural verification. |
+| `godot://engine/operations_reference` | Markdown reference guide detailing the 7 headless operations, input schemas, and return formats. |
+
 ## Architecture
 
 ```

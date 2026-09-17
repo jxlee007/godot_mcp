@@ -223,7 +223,13 @@ def _ok(data: Any) -> str:
 
 
 def _err(msg: str) -> str:
-    return json.dumps({"ok": False, "error": msg}, indent=2)
+    """Signal an execution exception to the MCP client.
+
+    Raising RuntimeError ensures that FastMCP flags the protocol frame with
+    isError=True, delivering clean diagnostic text directly to the model
+    instead of requiring JSON inference over an active token channel.
+    """
+    raise RuntimeError(msg)
 
 
 def _run_godot_sync(args: list[str], timeout: int = 120) -> tuple[str, str]:
@@ -1510,6 +1516,58 @@ def run_headless_diagnostics(
         })
     except Exception as e:
         return _err(str(e))
+
+
+# ===========================================================================
+# SECTION 10 -- MCP Resources
+# ===========================================================================
+
+@mcp.resource("godot://engine/operations_template")
+def get_operations_template() -> str:
+    """Returns the raw underlying GDScript bridge code for structural verification."""
+    if not _GD_SCRIPT.exists():
+        raise FileNotFoundError(f"GDScript engine not found at {_GD_SCRIPT}")
+    return _read_text(_GD_SCRIPT)
+
+
+@mcp.resource("godot://engine/operations_reference")
+def get_operations_reference() -> str:
+    """Returns the API reference and parameter specifications for headless GDScript operations."""
+    return """# Godot Operations Reference
+
+The headless GDScript engine (`godot://engine/operations_template`) exposes 7 atomic operations:
+
+1. `create_scene`:
+   - `scene_path`: str (e.g. "scenes/main.tscn")
+   - `root_node_type`: str (e.g. "Node2D", "Node3D", "Control")
+
+2. `add_node`:
+   - `scene_path`: str
+   - `node_type`: str (Godot class name)
+   - `node_name`: str
+   - `parent_node_path`: str (default: "root")
+   - `properties`: dict (optional property key-values)
+
+3. `load_sprite`:
+   - `scene_path`: str
+   - `node_path`: str
+   - `texture_path`: str
+
+4. `export_mesh_library`:
+   - `scene_path`: str
+   - `output_path`: str (".res" or ".tres")
+   - `mesh_item_names`: list[str] (optional)
+
+5. `save_scene`:
+   - `scene_path`: str
+   - `new_path`: str (optional, creates variant)
+
+6. `get_uid`:
+   - `file_path`: str (requires Godot 4.4+)
+
+7. `resave_resources`:
+   - `project_path`: str (regenerates all UIDs)
+"""
 
 
 # ===========================================================================
