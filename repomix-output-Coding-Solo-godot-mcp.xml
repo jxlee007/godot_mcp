@@ -1,0 +1,4022 @@
+<repomix><file_summary>This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+The content has been processed where content has been formatted for parsing in xml style, security check has been disabled.<purpose>This file contains a packed representation of the entire repository&apos;s contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.</purpose><file_format>The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file</file_format><usage_guidelines>- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.</usage_guidelines><notes>- Some files may have been excluded based on .gitignore rules and Repomix&apos;s configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Content has been formatted for parsing in xml style
+- Security check has been disabled - content may contain sensitive information
+- Files are sorted by Git change count (files with more changes are at the bottom)</notes></file_summary><directory_structure>.github/
+  FUNDING.yml
+scripts/
+  build.js
+src/
+  scripts/
+    godot_operations.gd
+  index.ts
+.gitignore
+CONTRIBUTING.md
+LICENSE
+package.json
+README.md
+tsconfig.json</directory_structure><files>This section contains the contents of the repository&apos;s files.<file path=".github/FUNDING.yml"># These are supported funding model platforms
+
+github: [Coding-Solo] # Replace with up to 4 GitHub Sponsors-enabled usernames e.g., [user1, user2]
+patreon: # Replace with a single Patreon username
+open_collective: # Replace with a single Open Collective username
+ko_fi: # Replace with a single Ko-fi username
+tidelift: # Replace with a single Tidelift platform-name/package-name e.g., npm/babel
+community_bridge: # Replace with a single Community Bridge project-name e.g., cloud-foundry
+liberapay: # Replace with a single Liberapay username
+issuehunt: # Replace with a single IssueHunt username
+lfx_crowdfunding: # Replace with a single LFX Crowdfunding project-name e.g., cloud-foundry
+polar: # Replace with a single Polar username
+buy_me_a_coffee: # Replace with a single Buy Me a Coffee username
+thanks_dev: # Replace with a single thanks.dev username
+custom: # Replace with up to 4 custom sponsorship URLs e.g., [&apos;link1&apos;, &apos;link2&apos;]</file><file path="scripts/build.js">import fs from &apos;fs-extra&apos;;
+import path from &apos;path&apos;;
+import { fileURLToPath } from &apos;url&apos;;
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Make the build/index.js file executable
+fs.chmodSync(path.join(__dirname, &apos;..&apos;, &apos;build&apos;, &apos;index.js&apos;), &apos;755&apos;);
+
+// Copy the scripts directory to the build directory
+try {
+  // Ensure the build/scripts directory exists
+  fs.ensureDirSync(path.join(__dirname, &apos;..&apos;, &apos;build&apos;, &apos;scripts&apos;));
+  
+  // Copy the godot_operations.gd file
+  fs.copyFileSync(
+    path.join(__dirname, &apos;..&apos;, &apos;src&apos;, &apos;scripts&apos;, &apos;godot_operations.gd&apos;),
+    path.join(__dirname, &apos;..&apos;, &apos;build&apos;, &apos;scripts&apos;, &apos;godot_operations.gd&apos;)
+  );
+  
+  console.log(&apos;Successfully copied godot_operations.gd to build/scripts&apos;);
+} catch (error) {
+  console.error(&apos;Error copying scripts:&apos;, error);
+  process.exit(1);
+}
+
+console.log(&apos;Build scripts completed successfully!&apos;);</file><file path="src/scripts/godot_operations.gd">#!/usr/bin/env -S godot --headless --script
+extends SceneTree
+
+# Debug mode flag
+var debug_mode = false
+
+func _init():
+    var args = OS.get_cmdline_args()
+    
+    # Check for debug flag
+    debug_mode = &quot;--debug-godot&quot; in args
+    
+    # Find the script argument and determine the positions of operation and params
+    var script_index = args.find(&quot;--script&quot;)
+    if script_index == -1:
+        log_error(&quot;Could not find --script argument&quot;)
+        quit(1)
+    
+    # The operation should be 2 positions after the script path (script_index + 1 is the script path itself)
+    var operation_index = script_index + 2
+    # The params should be 3 positions after the script path
+    var params_index = script_index + 3
+    
+    if args.size() &lt;= params_index:
+        log_error(&quot;Usage: godot --headless --script godot_operations.gd &lt;operation&gt; &lt;json_params&gt;&quot;)
+        log_error(&quot;Not enough command-line arguments provided.&quot;)
+        quit(1)
+    
+    # Log all arguments for debugging
+    log_debug(&quot;All arguments: &quot; + str(args))
+    log_debug(&quot;Script index: &quot; + str(script_index))
+    log_debug(&quot;Operation index: &quot; + str(operation_index))
+    log_debug(&quot;Params index: &quot; + str(params_index))
+    
+    var operation = args[operation_index]
+    var params_json = args[params_index]
+    
+    log_info(&quot;Operation: &quot; + operation)
+    log_debug(&quot;Params JSON: &quot; + params_json)
+    
+    # Parse JSON using Godot 4.x API
+    var json = JSON.new()
+    var error = json.parse(params_json)
+    var params = null
+    
+    if error == OK:
+        params = json.get_data()
+    else:
+        log_error(&quot;Failed to parse JSON parameters: &quot; + params_json)
+        log_error(&quot;JSON Error: &quot; + json.get_error_message() + &quot; at line &quot; + str(json.get_error_line()))
+        quit(1)
+    
+    if not params:
+        log_error(&quot;Failed to parse JSON parameters: &quot; + params_json)
+        quit(1)
+    
+    log_info(&quot;Executing operation: &quot; + operation)
+    
+    match operation:
+        &quot;create_scene&quot;:
+            create_scene(params)
+        &quot;add_node&quot;:
+            add_node(params)
+        &quot;load_sprite&quot;:
+            load_sprite(params)
+        &quot;export_mesh_library&quot;:
+            export_mesh_library(params)
+        &quot;save_scene&quot;:
+            save_scene(params)
+        &quot;get_uid&quot;:
+            get_uid(params)
+        &quot;resave_resources&quot;:
+            resave_resources(params)
+        _:
+            log_error(&quot;Unknown operation: &quot; + operation)
+            quit(1)
+    
+    quit()
+
+# Logging functions
+func log_debug(message):
+    if debug_mode:
+        print(&quot;[DEBUG] &quot; + message)
+
+func log_info(message):
+    print(&quot;[INFO] &quot; + message)
+
+func log_error(message):
+    printerr(&quot;[ERROR] &quot; + message)
+
+# Get a script by registered class name.
+# Only looks up names via the project&apos;s global class registry. Raw paths
+# (e.g. &quot;res://evil.gd&quot;) are intentionally not accepted here to prevent
+# arbitrary script instantiation from agent-supplied input.
+func get_script_by_name(name_of_class):
+    if debug_mode:
+        print(&quot;Attempting to get script for class: &quot; + name_of_class)
+
+    # Search for it in the global class registry if it&apos;s a class name
+    var global_classes = ProjectSettings.get_global_class_list()
+    if debug_mode:
+        print(&quot;Searching through &quot; + str(global_classes.size()) + &quot; global classes&quot;)
+    
+    for global_class in global_classes:
+        var found_name_of_class = global_class[&quot;class&quot;]
+        var found_path = global_class[&quot;path&quot;]
+        
+        if found_name_of_class == name_of_class:
+            if debug_mode:
+                print(&quot;Found matching class in registry: &quot; + found_name_of_class + &quot; at path: &quot; + found_path)
+            var script = load(found_path) as Script
+            if script:
+                if debug_mode:
+                    print(&quot;Successfully loaded script from registry&quot;)
+                return script
+            else:
+                printerr(&quot;Failed to load script from registry path: &quot; + found_path)
+                break
+    
+    printerr(&quot;Could not find script for class: &quot; + name_of_class)
+    return null
+
+# Instantiate a class by name
+func instantiate_class(name_of_class):
+    if name_of_class.is_empty():
+        printerr(&quot;Cannot instantiate class: name is empty&quot;)
+        return null
+    
+    var result = null
+    if debug_mode:
+        print(&quot;Attempting to instantiate class: &quot; + name_of_class)
+    
+    # Check if it&apos;s a built-in class
+    if ClassDB.class_exists(name_of_class):
+        if debug_mode:
+            print(&quot;Class exists in ClassDB, using ClassDB.instantiate()&quot;)
+        if ClassDB.can_instantiate(name_of_class):
+            result = ClassDB.instantiate(name_of_class)
+            if result == null:
+                printerr(&quot;ClassDB.instantiate() returned null for class: &quot; + name_of_class)
+        else:
+            printerr(&quot;Class exists but cannot be instantiated: &quot; + name_of_class)
+            printerr(&quot;This may be an abstract class or interface that cannot be directly instantiated&quot;)
+    else:
+        # Try to get the script
+        if debug_mode:
+            print(&quot;Class not found in ClassDB, trying to get script&quot;)
+        var script = get_script_by_name(name_of_class)
+        if script is GDScript:
+            if debug_mode:
+                print(&quot;Found GDScript, creating instance&quot;)
+            result = script.new()
+        else:
+            printerr(&quot;Failed to get script for class: &quot; + name_of_class)
+            return null
+    
+    if result == null:
+        printerr(&quot;Failed to instantiate class: &quot; + name_of_class)
+    elif debug_mode:
+        print(&quot;Successfully instantiated class: &quot; + name_of_class + &quot; of type: &quot; + result.get_class())
+    
+    return result
+
+# Create a new scene with a specified root node type
+func create_scene(params):
+    print(&quot;Creating scene: &quot; + params.scene_path)
+    
+    # Get project paths and log them for debugging
+    var project_res_path = &quot;res://&quot;
+    var project_user_path = &quot;user://&quot;
+    var global_res_path = ProjectSettings.globalize_path(project_res_path)
+    var global_user_path = ProjectSettings.globalize_path(project_user_path)
+    
+    if debug_mode:
+        print(&quot;Project paths:&quot;)
+        print(&quot;- res:// path: &quot; + project_res_path)
+        print(&quot;- user:// path: &quot; + project_user_path)
+        print(&quot;- Globalized res:// path: &quot; + global_res_path)
+        print(&quot;- Globalized user:// path: &quot; + global_user_path)
+        
+        # Print some common environment variables for debugging
+        print(&quot;Environment variables:&quot;)
+        var env_vars = [&quot;PATH&quot;, &quot;HOME&quot;, &quot;USER&quot;, &quot;TEMP&quot;, &quot;GODOT_PATH&quot;]
+        for env_var in env_vars:
+            if OS.has_environment(env_var):
+                print(&quot;  &quot; + env_var + &quot; = &quot; + OS.get_environment(env_var))
+    
+    # Normalize the scene path
+    var full_scene_path = params.scene_path
+    if not full_scene_path.begins_with(&quot;res://&quot;):
+        full_scene_path = &quot;res://&quot; + full_scene_path
+    if debug_mode:
+        print(&quot;Scene path (with res://): &quot; + full_scene_path)
+    
+    # Convert resource path to an absolute path
+    var absolute_scene_path = ProjectSettings.globalize_path(full_scene_path)
+    if debug_mode:
+        print(&quot;Absolute scene path: &quot; + absolute_scene_path)
+    
+    # Get the scene directory paths
+    var scene_dir_res = full_scene_path.get_base_dir()
+    var scene_dir_abs = absolute_scene_path.get_base_dir()
+    if debug_mode:
+        print(&quot;Scene directory (resource path): &quot; + scene_dir_res)
+        print(&quot;Scene directory (absolute path): &quot; + scene_dir_abs)
+    
+    # Only do extensive testing in debug mode
+    if debug_mode:
+        # Try to create a simple test file in the project root to verify write access
+        var initial_test_file_path = &quot;res://godot_mcp_test_write.tmp&quot;
+        var initial_test_file = FileAccess.open(initial_test_file_path, FileAccess.WRITE)
+        if initial_test_file:
+            initial_test_file.store_string(&quot;Test write access&quot;)
+            initial_test_file.close()
+            print(&quot;Successfully wrote test file to project root: &quot; + initial_test_file_path)
+            
+            # Verify the test file exists
+            var initial_test_file_exists = FileAccess.file_exists(initial_test_file_path)
+            print(&quot;Test file exists check: &quot; + str(initial_test_file_exists))
+            
+            # Clean up the test file
+            if initial_test_file_exists:
+                var remove_error = DirAccess.remove_absolute(ProjectSettings.globalize_path(initial_test_file_path))
+                print(&quot;Test file removal result: &quot; + str(remove_error))
+        else:
+            var write_error = FileAccess.get_open_error()
+            printerr(&quot;Failed to write test file to project root: &quot; + str(write_error))
+            printerr(&quot;This indicates a serious permission issue with the project directory&quot;)
+    
+    # Use traditional if-else statement for better compatibility
+    var root_node_type = &quot;Node2D&quot;  # Default value
+    if params.has(&quot;root_node_type&quot;):
+        root_node_type = params.root_node_type
+    if debug_mode:
+        print(&quot;Root node type: &quot; + root_node_type)
+    
+    # Create the root node
+    var scene_root = instantiate_class(root_node_type)
+    if not scene_root:
+        printerr(&quot;Failed to instantiate node of type: &quot; + root_node_type)
+        printerr(&quot;Make sure the class exists and can be instantiated&quot;)
+        printerr(&quot;Check if the class is registered in ClassDB or available as a script&quot;)
+        quit(1)
+    
+    scene_root.name = &quot;root&quot;
+    if debug_mode:
+        print(&quot;Root node created with name: &quot; + scene_root.name)
+    
+    # Set the owner of the root node to itself (important for scene saving)
+    scene_root.owner = scene_root
+    
+    # Pack the scene
+    var packed_scene = PackedScene.new()
+    var result = packed_scene.pack(scene_root)
+    if debug_mode:
+        print(&quot;Pack result: &quot; + str(result) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+    
+    if result == OK:
+        # Only do extensive testing in debug mode
+        if debug_mode:
+            # First, let&apos;s verify we can write to the project directory
+            print(&quot;Testing write access to project directory...&quot;)
+            var test_write_path = &quot;res://test_write_access.tmp&quot;
+            var test_write_abs = ProjectSettings.globalize_path(test_write_path)
+            var test_file = FileAccess.open(test_write_path, FileAccess.WRITE)
+            
+            if test_file:
+                test_file.store_string(&quot;Write test&quot;)
+                test_file.close()
+                print(&quot;Successfully wrote test file to project directory&quot;)
+                
+                # Clean up test file
+                if FileAccess.file_exists(test_write_path):
+                    var remove_error = DirAccess.remove_absolute(test_write_abs)
+                    print(&quot;Test file removal result: &quot; + str(remove_error))
+            else:
+                var write_error = FileAccess.get_open_error()
+                printerr(&quot;Failed to write test file to project directory: &quot; + str(write_error))
+                printerr(&quot;This may indicate permission issues with the project directory&quot;)
+                # Continue anyway, as the scene directory might still be writable
+        
+        # Ensure the scene directory exists using DirAccess
+        if debug_mode:
+            print(&quot;Ensuring scene directory exists...&quot;)
+        
+        # Get the scene directory relative to res://
+        var scene_dir_relative = scene_dir_res.substr(6)  # Remove &quot;res://&quot; prefix
+        if debug_mode:
+            print(&quot;Scene directory (relative to res://): &quot; + scene_dir_relative)
+        
+        # Create the directory if needed
+        if not scene_dir_relative.is_empty():
+            # First check if it exists
+            var dir_exists = DirAccess.dir_exists_absolute(scene_dir_abs)
+            if debug_mode:
+                print(&quot;Directory exists check (absolute): &quot; + str(dir_exists))
+            
+            if not dir_exists:
+                if debug_mode:
+                    print(&quot;Directory doesn&apos;t exist, creating: &quot; + scene_dir_relative)
+                
+                # Try to create the directory using DirAccess
+                var dir = DirAccess.open(&quot;res://&quot;)
+                if dir == null:
+                    var open_error = DirAccess.get_open_error()
+                    printerr(&quot;Failed to open res:// directory: &quot; + str(open_error))
+                    
+                    # Try alternative approach with absolute path
+                    if debug_mode:
+                        print(&quot;Trying alternative directory creation approach...&quot;)
+                    var make_dir_error = DirAccess.make_dir_recursive_absolute(scene_dir_abs)
+                    if debug_mode:
+                        print(&quot;Make directory result (absolute): &quot; + str(make_dir_error))
+                    
+                    if make_dir_error != OK:
+                        printerr(&quot;Failed to create directory using absolute path&quot;)
+                        printerr(&quot;Error code: &quot; + str(make_dir_error))
+                        quit(1)
+                else:
+                    # Create the directory using the DirAccess instance
+                    if debug_mode:
+                        print(&quot;Creating directory using DirAccess: &quot; + scene_dir_relative)
+                    var make_dir_error = dir.make_dir_recursive(scene_dir_relative)
+                    if debug_mode:
+                        print(&quot;Make directory result: &quot; + str(make_dir_error))
+                    
+                    if make_dir_error != OK:
+                        printerr(&quot;Failed to create directory: &quot; + scene_dir_relative)
+                        printerr(&quot;Error code: &quot; + str(make_dir_error))
+                        quit(1)
+                
+                # Verify the directory was created
+                dir_exists = DirAccess.dir_exists_absolute(scene_dir_abs)
+                if debug_mode:
+                    print(&quot;Directory exists check after creation: &quot; + str(dir_exists))
+                
+                if not dir_exists:
+                    printerr(&quot;Directory reported as created but does not exist: &quot; + scene_dir_abs)
+                    printerr(&quot;This may indicate a problem with path resolution or permissions&quot;)
+                    quit(1)
+            elif debug_mode:
+                print(&quot;Directory already exists: &quot; + scene_dir_abs)
+        
+        # Save the scene
+        if debug_mode:
+            print(&quot;Saving scene to: &quot; + full_scene_path)
+        var save_error = ResourceSaver.save(packed_scene, full_scene_path)
+        if debug_mode:
+            print(&quot;Save result: &quot; + str(save_error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+        
+        if save_error == OK:
+            # Only do extensive testing in debug mode
+            if debug_mode:
+                # Wait a moment to ensure file system has time to complete the write
+                print(&quot;Waiting for file system to complete write operation...&quot;)
+                OS.delay_msec(500)  # 500ms delay
+                
+                # Verify the file was actually created using multiple methods
+                var file_check_abs = FileAccess.file_exists(absolute_scene_path)
+                print(&quot;File exists check (absolute path): &quot; + str(file_check_abs))
+                
+                var file_check_res = FileAccess.file_exists(full_scene_path)
+                print(&quot;File exists check (resource path): &quot; + str(file_check_res))
+                
+                var res_exists = ResourceLoader.exists(full_scene_path)
+                print(&quot;Resource exists check: &quot; + str(res_exists))
+                
+                # If file doesn&apos;t exist by absolute path, try to create a test file in the same directory
+                if not file_check_abs and not file_check_res:
+                    printerr(&quot;Scene file not found after save. Trying to diagnose the issue...&quot;)
+                    
+                    # Try to write a test file to the same directory
+                    var test_scene_file_path = scene_dir_res + &quot;/test_scene_file.tmp&quot;
+                    var test_scene_file = FileAccess.open(test_scene_file_path, FileAccess.WRITE)
+                    
+                    if test_scene_file:
+                        test_scene_file.store_string(&quot;Test scene directory write&quot;)
+                        test_scene_file.close()
+                        print(&quot;Successfully wrote test file to scene directory: &quot; + test_scene_file_path)
+                        
+                        # Check if the test file exists
+                        var test_file_exists = FileAccess.file_exists(test_scene_file_path)
+                        print(&quot;Test file exists: &quot; + str(test_file_exists))
+                        
+                        if test_file_exists:
+                            # Directory is writable, so the issue is with scene saving
+                            printerr(&quot;Directory is writable but scene file wasn&apos;t created.&quot;)
+                            printerr(&quot;This suggests an issue with ResourceSaver.save() or the packed scene.&quot;)
+                            
+                            # Try saving with a different approach
+                            print(&quot;Trying alternative save approach...&quot;)
+                            var alt_save_error = ResourceSaver.save(packed_scene, test_scene_file_path + &quot;.tscn&quot;)
+                            print(&quot;Alternative save result: &quot; + str(alt_save_error))
+                            
+                            # Clean up test files
+                            DirAccess.remove_absolute(ProjectSettings.globalize_path(test_scene_file_path))
+                            if alt_save_error == OK:
+                                DirAccess.remove_absolute(ProjectSettings.globalize_path(test_scene_file_path + &quot;.tscn&quot;))
+                        else:
+                            printerr(&quot;Test file couldn&apos;t be verified. This suggests filesystem access issues.&quot;)
+                    else:
+                        var write_error = FileAccess.get_open_error()
+                        printerr(&quot;Failed to write test file to scene directory: &quot; + str(write_error))
+                        printerr(&quot;This confirms there are permission or path issues with the scene directory.&quot;)
+                    
+                    # Return error since we couldn&apos;t create the scene file
+                    printerr(&quot;Failed to create scene: &quot; + params.scene_path)
+                    quit(1)
+                
+                # If we get here, at least one of our file checks passed
+                if file_check_abs or file_check_res or res_exists:
+                    print(&quot;Scene file verified to exist!&quot;)
+                    
+                    # Try to load the scene to verify it&apos;s valid
+                    var test_load = ResourceLoader.load(full_scene_path)
+                    if test_load:
+                        print(&quot;Scene created and verified successfully at: &quot; + params.scene_path)
+                        print(&quot;Scene file can be loaded correctly.&quot;)
+                    else:
+                        print(&quot;Scene file exists but cannot be loaded. It may be corrupted or incomplete.&quot;)
+                        # Continue anyway since the file exists
+                    
+                    print(&quot;Scene created successfully at: &quot; + params.scene_path)
+                else:
+                    printerr(&quot;All file existence checks failed despite successful save operation.&quot;)
+                    printerr(&quot;This indicates a serious issue with file system access or path resolution.&quot;)
+                    quit(1)
+            else:
+                # In non-debug mode, just check if the file exists
+                var file_exists = FileAccess.file_exists(full_scene_path)
+                if file_exists:
+                    print(&quot;Scene created successfully at: &quot; + params.scene_path)
+                else:
+                    printerr(&quot;Failed to create scene: &quot; + params.scene_path)
+                    quit(1)
+        else:
+            # Handle specific error codes
+            var error_message = &quot;Failed to save scene. Error code: &quot; + str(save_error)
+            
+            if save_error == ERR_CANT_CREATE:
+                error_message += &quot; (ERR_CANT_CREATE - Cannot create the scene file)&quot;
+            elif save_error == ERR_CANT_OPEN:
+                error_message += &quot; (ERR_CANT_OPEN - Cannot open the scene file for writing)&quot;
+            elif save_error == ERR_FILE_CANT_WRITE:
+                error_message += &quot; (ERR_FILE_CANT_WRITE - Cannot write to the scene file)&quot;
+            elif save_error == ERR_FILE_NO_PERMISSION:
+                error_message += &quot; (ERR_FILE_NO_PERMISSION - No permission to write the scene file)&quot;
+            
+            printerr(error_message)
+            quit(1)
+    else:
+        printerr(&quot;Failed to pack scene: &quot; + str(result))
+        printerr(&quot;Error code: &quot; + str(result))
+        quit(1)
+
+# Add a node to an existing scene
+func add_node(params):
+    print(&quot;Adding node to scene: &quot; + params.scene_path)
+    
+    var full_scene_path = params.scene_path
+    if not full_scene_path.begins_with(&quot;res://&quot;):
+        full_scene_path = &quot;res://&quot; + full_scene_path
+    if debug_mode:
+        print(&quot;Scene path (with res://): &quot; + full_scene_path)
+    
+    var absolute_scene_path = ProjectSettings.globalize_path(full_scene_path)
+    if debug_mode:
+        print(&quot;Absolute scene path: &quot; + absolute_scene_path)
+    
+    if not FileAccess.file_exists(absolute_scene_path):
+        printerr(&quot;Scene file does not exist at: &quot; + absolute_scene_path)
+        quit(1)
+    
+    var scene = load(full_scene_path)
+    if not scene:
+        printerr(&quot;Failed to load scene: &quot; + full_scene_path)
+        quit(1)
+    
+    if debug_mode:
+        print(&quot;Scene loaded successfully&quot;)
+    var scene_root = scene.instantiate()
+    if debug_mode:
+        print(&quot;Scene instantiated&quot;)
+    
+    # Use traditional if-else statement for better compatibility
+    var parent_path = &quot;root&quot;  # Default value
+    if params.has(&quot;parent_node_path&quot;):
+        parent_path = params.parent_node_path
+    if debug_mode:
+        print(&quot;Parent path: &quot; + parent_path)
+    
+    var parent = scene_root
+    if parent_path != &quot;root&quot;:
+        parent = scene_root.get_node(parent_path.replace(&quot;root/&quot;, &quot;&quot;))
+        if not parent:
+            printerr(&quot;Parent node not found: &quot; + parent_path)
+            quit(1)
+    if debug_mode:
+        print(&quot;Parent node found: &quot; + parent.name)
+    
+    if debug_mode:
+        print(&quot;Instantiating node of type: &quot; + params.node_type)
+    var new_node = instantiate_class(params.node_type)
+    if not new_node:
+        printerr(&quot;Failed to instantiate node of type: &quot; + params.node_type)
+        printerr(&quot;Make sure the class exists and can be instantiated&quot;)
+        printerr(&quot;Check if the class is registered in ClassDB or available as a script&quot;)
+        quit(1)
+    new_node.name = params.node_name
+    if debug_mode:
+        print(&quot;New node created with name: &quot; + new_node.name)
+    
+    if params.has(&quot;properties&quot;):
+        if debug_mode:
+            print(&quot;Setting properties on node&quot;)
+        var properties = params.properties
+        for property in properties:
+            if debug_mode:
+                print(&quot;Setting property: &quot; + property + &quot; = &quot; + str(properties[property]))
+            var value = properties[property]
+            if typeof(value) == TYPE_STRING and value.begins_with(&quot;res://&quot;):
+                value = load(value)
+                if debug_mode:
+                    print(&quot;Loaded resource for property: &quot; + property + &quot; -&gt; &quot; + str(value))
+            new_node.set(property, value)
+    
+    parent.add_child(new_node)
+    new_node.owner = scene_root
+    if debug_mode:
+        print(&quot;Node added to parent and ownership set&quot;)
+    
+    var packed_scene = PackedScene.new()
+    var result = packed_scene.pack(scene_root)
+    if debug_mode:
+        print(&quot;Pack result: &quot; + str(result) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+    
+    if result == OK:
+        if debug_mode:
+            print(&quot;Saving scene to: &quot; + absolute_scene_path)
+        var save_error = ResourceSaver.save(packed_scene, absolute_scene_path)
+        if debug_mode:
+            print(&quot;Save result: &quot; + str(save_error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+        if save_error == OK:
+            if debug_mode:
+                var file_check_after = FileAccess.file_exists(absolute_scene_path)
+                print(&quot;File exists check after save: &quot; + str(file_check_after))
+                if file_check_after:
+                    print(&quot;Node &apos;&quot; + params.node_name + &quot;&apos; of type &apos;&quot; + params.node_type + &quot;&apos; added successfully&quot;)
+                else:
+                    printerr(&quot;File reported as saved but does not exist at: &quot; + absolute_scene_path)
+            else:
+                print(&quot;Node &apos;&quot; + params.node_name + &quot;&apos; of type &apos;&quot; + params.node_type + &quot;&apos; added successfully&quot;)
+        else:
+            printerr(&quot;Failed to save scene: &quot; + str(save_error))
+    else:
+        printerr(&quot;Failed to pack scene: &quot; + str(result))
+
+# Load a sprite into a Sprite2D node
+func load_sprite(params):
+    print(&quot;Loading sprite into scene: &quot; + params.scene_path)
+    
+    # Ensure the scene path starts with res:// for Godot&apos;s resource system
+    var full_scene_path = params.scene_path
+    if not full_scene_path.begins_with(&quot;res://&quot;):
+        full_scene_path = &quot;res://&quot; + full_scene_path
+    
+    if debug_mode:
+        print(&quot;Full scene path (with res://): &quot; + full_scene_path)
+    
+    # Check if the scene file exists
+    var file_check = FileAccess.file_exists(full_scene_path)
+    if debug_mode:
+        print(&quot;Scene file exists check: &quot; + str(file_check))
+    
+    if not file_check:
+        printerr(&quot;Scene file does not exist at: &quot; + full_scene_path)
+        # Get the absolute path for reference
+        var absolute_path = ProjectSettings.globalize_path(full_scene_path)
+        printerr(&quot;Absolute file path that doesn&apos;t exist: &quot; + absolute_path)
+        quit(1)
+    
+    # Ensure the texture path starts with res:// for Godot&apos;s resource system
+    var full_texture_path = params.texture_path
+    if not full_texture_path.begins_with(&quot;res://&quot;):
+        full_texture_path = &quot;res://&quot; + full_texture_path
+    
+    if debug_mode:
+        print(&quot;Full texture path (with res://): &quot; + full_texture_path)
+    
+    # Load the scene
+    var scene = load(full_scene_path)
+    if not scene:
+        printerr(&quot;Failed to load scene: &quot; + full_scene_path)
+        quit(1)
+    
+    if debug_mode:
+        print(&quot;Scene loaded successfully&quot;)
+    
+    # Instance the scene
+    var scene_root = scene.instantiate()
+    if debug_mode:
+        print(&quot;Scene instantiated&quot;)
+    
+    # Find the sprite node
+    var node_path = params.node_path
+    if debug_mode:
+        print(&quot;Original node path: &quot; + node_path)
+    
+    if node_path.begins_with(&quot;root/&quot;):
+        node_path = node_path.substr(5)  # Remove &quot;root/&quot; prefix
+        if debug_mode:
+            print(&quot;Node path after removing &apos;root/&apos; prefix: &quot; + node_path)
+    
+    var sprite_node = null
+    if node_path == &quot;&quot;:
+        # If no node path, assume root is the sprite
+        sprite_node = scene_root
+        if debug_mode:
+            print(&quot;Using root node as sprite node&quot;)
+    else:
+        sprite_node = scene_root.get_node(node_path)
+        if sprite_node and debug_mode:
+            print(&quot;Found sprite node: &quot; + sprite_node.name)
+    
+    if not sprite_node:
+        printerr(&quot;Node not found: &quot; + params.node_path)
+        quit(1)
+    
+    # Check if the node is a Sprite2D or compatible type
+    if debug_mode:
+        print(&quot;Node class: &quot; + sprite_node.get_class())
+    if not (sprite_node is Sprite2D or sprite_node is Sprite3D or sprite_node is TextureRect):
+        printerr(&quot;Node is not a sprite-compatible type: &quot; + sprite_node.get_class())
+        quit(1)
+    
+    # Load the texture
+    if debug_mode:
+        print(&quot;Loading texture from: &quot; + full_texture_path)
+    var texture = load(full_texture_path)
+    if not texture:
+        printerr(&quot;Failed to load texture: &quot; + full_texture_path)
+        quit(1)
+    
+    if debug_mode:
+        print(&quot;Texture loaded successfully&quot;)
+    
+    # Set the texture on the sprite
+    if sprite_node is Sprite2D or sprite_node is Sprite3D:
+        sprite_node.texture = texture
+        if debug_mode:
+            print(&quot;Set texture on Sprite2D/Sprite3D node&quot;)
+    elif sprite_node is TextureRect:
+        sprite_node.texture = texture
+        if debug_mode:
+            print(&quot;Set texture on TextureRect node&quot;)
+    
+    # Save the modified scene
+    var packed_scene = PackedScene.new()
+    var result = packed_scene.pack(scene_root)
+    if debug_mode:
+        print(&quot;Pack result: &quot; + str(result) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+    
+    if result == OK:
+        if debug_mode:
+            print(&quot;Saving scene to: &quot; + full_scene_path)
+        var error = ResourceSaver.save(packed_scene, full_scene_path)
+        if debug_mode:
+            print(&quot;Save result: &quot; + str(error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+        
+        if error == OK:
+            # Verify the file was actually updated
+            if debug_mode:
+                var file_check_after = FileAccess.file_exists(full_scene_path)
+                print(&quot;File exists check after save: &quot; + str(file_check_after))
+                
+                if file_check_after:
+                    print(&quot;Sprite loaded successfully with texture: &quot; + full_texture_path)
+                    # Get the absolute path for reference
+                    var absolute_path = ProjectSettings.globalize_path(full_scene_path)
+                    print(&quot;Absolute file path: &quot; + absolute_path)
+                else:
+                    printerr(&quot;File reported as saved but does not exist at: &quot; + full_scene_path)
+            else:
+                print(&quot;Sprite loaded successfully with texture: &quot; + full_texture_path)
+        else:
+            printerr(&quot;Failed to save scene: &quot; + str(error))
+    else:
+        printerr(&quot;Failed to pack scene: &quot; + str(result))
+
+# Export a scene as a MeshLibrary resource
+func export_mesh_library(params):
+    print(&quot;Exporting MeshLibrary from scene: &quot; + params.scene_path)
+    
+    # Ensure the scene path starts with res:// for Godot&apos;s resource system
+    var full_scene_path = params.scene_path
+    if not full_scene_path.begins_with(&quot;res://&quot;):
+        full_scene_path = &quot;res://&quot; + full_scene_path
+    
+    if debug_mode:
+        print(&quot;Full scene path (with res://): &quot; + full_scene_path)
+    
+    # Ensure the output path starts with res:// for Godot&apos;s resource system
+    var full_output_path = params.output_path
+    if not full_output_path.begins_with(&quot;res://&quot;):
+        full_output_path = &quot;res://&quot; + full_output_path
+    
+    if debug_mode:
+        print(&quot;Full output path (with res://): &quot; + full_output_path)
+    
+    # Check if the scene file exists
+    var file_check = FileAccess.file_exists(full_scene_path)
+    if debug_mode:
+        print(&quot;Scene file exists check: &quot; + str(file_check))
+    
+    if not file_check:
+        printerr(&quot;Scene file does not exist at: &quot; + full_scene_path)
+        # Get the absolute path for reference
+        var absolute_path = ProjectSettings.globalize_path(full_scene_path)
+        printerr(&quot;Absolute file path that doesn&apos;t exist: &quot; + absolute_path)
+        quit(1)
+    
+    # Load the scene
+    if debug_mode:
+        print(&quot;Loading scene from: &quot; + full_scene_path)
+    var scene = load(full_scene_path)
+    if not scene:
+        printerr(&quot;Failed to load scene: &quot; + full_scene_path)
+        quit(1)
+    
+    if debug_mode:
+        print(&quot;Scene loaded successfully&quot;)
+    
+    # Instance the scene
+    var scene_root = scene.instantiate()
+    if debug_mode:
+        print(&quot;Scene instantiated&quot;)
+    
+    # Create a new MeshLibrary
+    var mesh_library = MeshLibrary.new()
+    if debug_mode:
+        print(&quot;Created new MeshLibrary&quot;)
+    
+    # Get mesh item names if provided
+    var mesh_item_names = params.mesh_item_names if params.has(&quot;mesh_item_names&quot;) else []
+    var use_specific_items = mesh_item_names.size() &gt; 0
+    
+    if debug_mode:
+        if use_specific_items:
+            print(&quot;Using specific mesh items: &quot; + str(mesh_item_names))
+        else:
+            print(&quot;Using all mesh items in the scene&quot;)
+    
+    # Process all child nodes
+    var item_id = 0
+    if debug_mode:
+        print(&quot;Processing child nodes...&quot;)
+    
+    for child in scene_root.get_children():
+        if debug_mode:
+            print(&quot;Checking child node: &quot; + child.name)
+        
+        # Skip if not using all items and this item is not in the list
+        if use_specific_items and not (child.name in mesh_item_names):
+            if debug_mode:
+                print(&quot;Skipping node &quot; + child.name + &quot; (not in specified items list)&quot;)
+            continue
+            
+        # Check if the child has a mesh
+        var mesh_instance = null
+        if child is MeshInstance3D:
+            mesh_instance = child
+            if debug_mode:
+                print(&quot;Node &quot; + child.name + &quot; is a MeshInstance3D&quot;)
+        else:
+            # Try to find a MeshInstance3D in the child&apos;s descendants
+            if debug_mode:
+                print(&quot;Searching for MeshInstance3D in descendants of &quot; + child.name)
+            for descendant in child.get_children():
+                if descendant is MeshInstance3D:
+                    mesh_instance = descendant
+                    if debug_mode:
+                        print(&quot;Found MeshInstance3D in descendant: &quot; + descendant.name)
+                    break
+        
+        if mesh_instance and mesh_instance.mesh:
+            if debug_mode:
+                print(&quot;Adding mesh: &quot; + child.name)
+            
+            # Add the mesh to the library
+            mesh_library.create_item(item_id)
+            mesh_library.set_item_name(item_id, child.name)
+            mesh_library.set_item_mesh(item_id, mesh_instance.mesh)
+            if debug_mode:
+                print(&quot;Added mesh to library with ID: &quot; + str(item_id))
+            
+            # Add collision shape if available
+            var collision_added = false
+            for collision_child in child.get_children():
+                if collision_child is CollisionShape3D and collision_child.shape:
+                    mesh_library.set_item_shapes(item_id, [collision_child.shape])
+                    if debug_mode:
+                        print(&quot;Added collision shape from: &quot; + collision_child.name)
+                    collision_added = true
+                    break
+            
+            if debug_mode and not collision_added:
+                print(&quot;No collision shape found for mesh: &quot; + child.name)
+            
+            # Add preview if available
+            if mesh_instance.mesh:
+                mesh_library.set_item_preview(item_id, mesh_instance.mesh)
+                if debug_mode:
+                    print(&quot;Added preview for mesh: &quot; + child.name)
+            
+            item_id += 1
+        elif debug_mode:
+            print(&quot;Node &quot; + child.name + &quot; has no valid mesh&quot;)
+    
+    if debug_mode:
+        print(&quot;Processed &quot; + str(item_id) + &quot; meshes&quot;)
+    
+    # Create directory if it doesn&apos;t exist
+    var dir = DirAccess.open(&quot;res://&quot;)
+    if dir == null:
+        printerr(&quot;Failed to open res:// directory&quot;)
+        printerr(&quot;DirAccess error: &quot; + str(DirAccess.get_open_error()))
+        quit(1)
+        
+    var output_dir = full_output_path.get_base_dir()
+    if debug_mode:
+        print(&quot;Output directory: &quot; + output_dir)
+    
+    if output_dir != &quot;res://&quot; and not dir.dir_exists(output_dir.substr(6)):  # Remove &quot;res://&quot; prefix
+        if debug_mode:
+            print(&quot;Creating directory: &quot; + output_dir)
+        var error = dir.make_dir_recursive(output_dir.substr(6))  # Remove &quot;res://&quot; prefix
+        if error != OK:
+            printerr(&quot;Failed to create directory: &quot; + output_dir + &quot;, error: &quot; + str(error))
+            quit(1)
+    
+    # Save the mesh library
+    if item_id &gt; 0:
+        if debug_mode:
+            print(&quot;Saving MeshLibrary to: &quot; + full_output_path)
+        var error = ResourceSaver.save(mesh_library, full_output_path)
+        if debug_mode:
+            print(&quot;Save result: &quot; + str(error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+        
+        if error == OK:
+            # Verify the file was actually created
+            if debug_mode:
+                var file_check_after = FileAccess.file_exists(full_output_path)
+                print(&quot;File exists check after save: &quot; + str(file_check_after))
+                
+                if file_check_after:
+                    print(&quot;MeshLibrary exported successfully with &quot; + str(item_id) + &quot; items to: &quot; + full_output_path)
+                    # Get the absolute path for reference
+                    var absolute_path = ProjectSettings.globalize_path(full_output_path)
+                    print(&quot;Absolute file path: &quot; + absolute_path)
+                else:
+                    printerr(&quot;File reported as saved but does not exist at: &quot; + full_output_path)
+            else:
+                print(&quot;MeshLibrary exported successfully with &quot; + str(item_id) + &quot; items to: &quot; + full_output_path)
+        else:
+            printerr(&quot;Failed to save MeshLibrary: &quot; + str(error))
+    else:
+        printerr(&quot;No valid meshes found in the scene&quot;)
+
+# Find files with a specific extension recursively
+func find_files(path, extension):
+    var files = []
+    var dir = DirAccess.open(path)
+    
+    if dir:
+        dir.list_dir_begin()
+        var file_name = dir.get_next()
+        
+        while file_name != &quot;&quot;:
+            if dir.current_is_dir() and not file_name.begins_with(&quot;.&quot;):
+                files.append_array(find_files(path + file_name + &quot;/&quot;, extension))
+            elif file_name.ends_with(extension):
+                files.append(path + file_name)
+            
+            file_name = dir.get_next()
+    
+    return files
+
+# Get UID for a specific file
+func get_uid(params):
+    if not params.has(&quot;file_path&quot;):
+        printerr(&quot;File path is required&quot;)
+        quit(1)
+    
+    # Ensure the file path starts with res:// for Godot&apos;s resource system
+    var file_path = params.file_path
+    if not file_path.begins_with(&quot;res://&quot;):
+        file_path = &quot;res://&quot; + file_path
+    
+    print(&quot;Getting UID for file: &quot; + file_path)
+    if debug_mode:
+        print(&quot;Full file path (with res://): &quot; + file_path)
+    
+    # Get the absolute path for reference
+    var absolute_path = ProjectSettings.globalize_path(file_path)
+    if debug_mode:
+        print(&quot;Absolute file path: &quot; + absolute_path)
+    
+    # Ensure the file exists
+    var file_check = FileAccess.file_exists(file_path)
+    if debug_mode:
+        print(&quot;File exists check: &quot; + str(file_check))
+    
+    if not file_check:
+        printerr(&quot;File does not exist at: &quot; + file_path)
+        printerr(&quot;Absolute file path that doesn&apos;t exist: &quot; + absolute_path)
+        quit(1)
+    
+    # Check if the UID file exists
+    var uid_path = file_path + &quot;.uid&quot;
+    if debug_mode:
+        print(&quot;UID file path: &quot; + uid_path)
+    
+    var uid_check = FileAccess.file_exists(uid_path)
+    if debug_mode:
+        print(&quot;UID file exists check: &quot; + str(uid_check))
+    
+    var f = FileAccess.open(uid_path, FileAccess.READ)
+    
+    if f:
+        # Read the UID content
+        var uid_content = f.get_as_text()
+        f.close()
+        if debug_mode:
+            print(&quot;UID content read successfully&quot;)
+        
+        # Return the UID content
+        var result = {
+            &quot;file&quot;: file_path,
+            &quot;absolutePath&quot;: absolute_path,
+            &quot;uid&quot;: uid_content.strip_edges(),
+            &quot;exists&quot;: true
+        }
+        if debug_mode:
+            print(&quot;UID result: &quot; + JSON.stringify(result))
+        print(JSON.stringify(result))
+    else:
+        if debug_mode:
+            print(&quot;UID file does not exist or could not be opened&quot;)
+        
+        # UID file doesn&apos;t exist
+        var result = {
+            &quot;file&quot;: file_path,
+            &quot;absolutePath&quot;: absolute_path,
+            &quot;exists&quot;: false,
+            &quot;message&quot;: &quot;UID file does not exist for this file. Use resave_resources to generate UIDs.&quot;
+        }
+        if debug_mode:
+            print(&quot;UID result: &quot; + JSON.stringify(result))
+        print(JSON.stringify(result))
+
+# Resave all resources to update UID references
+func resave_resources(params):
+    print(&quot;Resaving all resources to update UID references...&quot;)
+    
+    # Get project path if provided
+    var project_path = &quot;res://&quot;
+    if params.has(&quot;project_path&quot;):
+        project_path = params.project_path
+        if not project_path.begins_with(&quot;res://&quot;):
+            project_path = &quot;res://&quot; + project_path
+        if not project_path.ends_with(&quot;/&quot;):
+            project_path += &quot;/&quot;
+    
+    if debug_mode:
+        print(&quot;Using project path: &quot; + project_path)
+    
+    # Get all .tscn files
+    if debug_mode:
+        print(&quot;Searching for scene files in: &quot; + project_path)
+    var scenes = find_files(project_path, &quot;.tscn&quot;)
+    if debug_mode:
+        print(&quot;Found &quot; + str(scenes.size()) + &quot; scenes&quot;)
+    
+    # Resave each scene
+    var success_count = 0
+    var error_count = 0
+    
+    for scene_path in scenes:
+        if debug_mode:
+            print(&quot;Processing scene: &quot; + scene_path)
+        
+        # Check if the scene file exists
+        var file_check = FileAccess.file_exists(scene_path)
+        if debug_mode:
+            print(&quot;Scene file exists check: &quot; + str(file_check))
+        
+        if not file_check:
+            printerr(&quot;Scene file does not exist at: &quot; + scene_path)
+            error_count += 1
+            continue
+        
+        # Load the scene
+        var scene = load(scene_path)
+        if scene:
+            if debug_mode:
+                print(&quot;Scene loaded successfully, saving...&quot;)
+            var error = ResourceSaver.save(scene, scene_path)
+            if debug_mode:
+                print(&quot;Save result: &quot; + str(error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+            
+            if error == OK:
+                success_count += 1
+                if debug_mode:
+                    print(&quot;Scene saved successfully: &quot; + scene_path)
+                
+                    # Verify the file was actually updated
+                    var file_check_after = FileAccess.file_exists(scene_path)
+                    print(&quot;File exists check after save: &quot; + str(file_check_after))
+                
+                    if not file_check_after:
+                        printerr(&quot;File reported as saved but does not exist at: &quot; + scene_path)
+            else:
+                error_count += 1
+                printerr(&quot;Failed to save: &quot; + scene_path + &quot;, error: &quot; + str(error))
+        else:
+            error_count += 1
+            printerr(&quot;Failed to load: &quot; + scene_path)
+    
+    # Get all .gd and .shader files
+    if debug_mode:
+        print(&quot;Searching for script and shader files in: &quot; + project_path)
+    var scripts = find_files(project_path, &quot;.gd&quot;) + find_files(project_path, &quot;.shader&quot;) + find_files(project_path, &quot;.gdshader&quot;)
+    if debug_mode:
+        print(&quot;Found &quot; + str(scripts.size()) + &quot; scripts/shaders&quot;)
+    
+    # Check for missing .uid files
+    var missing_uids = 0
+    var generated_uids = 0
+    
+    for script_path in scripts:
+        if debug_mode:
+            print(&quot;Checking UID for: &quot; + script_path)
+        var uid_path = script_path + &quot;.uid&quot;
+        
+        var uid_check = FileAccess.file_exists(uid_path)
+        if debug_mode:
+            print(&quot;UID file exists check: &quot; + str(uid_check))
+        
+        var f = FileAccess.open(uid_path, FileAccess.READ)
+        if not f:
+            missing_uids += 1
+            if debug_mode:
+                print(&quot;Missing UID file for: &quot; + script_path + &quot;, generating...&quot;)
+            
+            # Force a save to generate UID
+            var res = load(script_path)
+            if res:
+                var error = ResourceSaver.save(res, script_path)
+                if debug_mode:
+                    print(&quot;Save result: &quot; + str(error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+                
+                if error == OK:
+                    generated_uids += 1
+                    if debug_mode:
+                        print(&quot;Generated UID for: &quot; + script_path)
+                    
+                        # Verify the UID file was actually created
+                        var uid_check_after = FileAccess.file_exists(uid_path)
+                        print(&quot;UID file exists check after save: &quot; + str(uid_check_after))
+                    
+                        if not uid_check_after:
+                            printerr(&quot;UID file reported as generated but does not exist at: &quot; + uid_path)
+                else:
+                    printerr(&quot;Failed to generate UID for: &quot; + script_path + &quot;, error: &quot; + str(error))
+            else:
+                printerr(&quot;Failed to load resource: &quot; + script_path)
+        elif debug_mode:
+            print(&quot;UID file already exists for: &quot; + script_path)
+    
+    if debug_mode:
+        print(&quot;Summary:&quot;)
+        print(&quot;- Scenes processed: &quot; + str(scenes.size()))
+        print(&quot;- Scenes successfully saved: &quot; + str(success_count))
+        print(&quot;- Scenes with errors: &quot; + str(error_count))
+        print(&quot;- Scripts/shaders missing UIDs: &quot; + str(missing_uids))
+        print(&quot;- UIDs successfully generated: &quot; + str(generated_uids))
+    print(&quot;Resave operation complete&quot;)
+
+# Save changes to a scene file
+func save_scene(params):
+    print(&quot;Saving scene: &quot; + params.scene_path)
+    
+    # Ensure the scene path starts with res:// for Godot&apos;s resource system
+    var full_scene_path = params.scene_path
+    if not full_scene_path.begins_with(&quot;res://&quot;):
+        full_scene_path = &quot;res://&quot; + full_scene_path
+    
+    if debug_mode:
+        print(&quot;Full scene path (with res://): &quot; + full_scene_path)
+    
+    # Check if the scene file exists
+    var file_check = FileAccess.file_exists(full_scene_path)
+    if debug_mode:
+        print(&quot;Scene file exists check: &quot; + str(file_check))
+    
+    if not file_check:
+        printerr(&quot;Scene file does not exist at: &quot; + full_scene_path)
+        # Get the absolute path for reference
+        var absolute_path = ProjectSettings.globalize_path(full_scene_path)
+        printerr(&quot;Absolute file path that doesn&apos;t exist: &quot; + absolute_path)
+        quit(1)
+    
+    # Load the scene
+    var scene = load(full_scene_path)
+    if not scene:
+        printerr(&quot;Failed to load scene: &quot; + full_scene_path)
+        quit(1)
+    
+    if debug_mode:
+        print(&quot;Scene loaded successfully&quot;)
+    
+    # Instance the scene
+    var scene_root = scene.instantiate()
+    if debug_mode:
+        print(&quot;Scene instantiated&quot;)
+    
+    # Determine save path
+    var save_path = params.new_path if params.has(&quot;new_path&quot;) else full_scene_path
+    if params.has(&quot;new_path&quot;) and not save_path.begins_with(&quot;res://&quot;):
+        save_path = &quot;res://&quot; + save_path
+    
+    if debug_mode:
+        print(&quot;Save path: &quot; + save_path)
+    
+    # Create directory if it doesn&apos;t exist
+    if params.has(&quot;new_path&quot;):
+        var dir = DirAccess.open(&quot;res://&quot;)
+        if dir == null:
+            printerr(&quot;Failed to open res:// directory&quot;)
+            printerr(&quot;DirAccess error: &quot; + str(DirAccess.get_open_error()))
+            quit(1)
+            
+        var scene_dir = save_path.get_base_dir()
+        if debug_mode:
+            print(&quot;Scene directory: &quot; + scene_dir)
+        
+        if scene_dir != &quot;res://&quot; and not dir.dir_exists(scene_dir.substr(6)):  # Remove &quot;res://&quot; prefix
+            if debug_mode:
+                print(&quot;Creating directory: &quot; + scene_dir)
+            var error = dir.make_dir_recursive(scene_dir.substr(6))  # Remove &quot;res://&quot; prefix
+            if error != OK:
+                printerr(&quot;Failed to create directory: &quot; + scene_dir + &quot;, error: &quot; + str(error))
+                quit(1)
+    
+    # Create a packed scene
+    var packed_scene = PackedScene.new()
+    var result = packed_scene.pack(scene_root)
+    if debug_mode:
+        print(&quot;Pack result: &quot; + str(result) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+    
+    if result == OK:
+        if debug_mode:
+            print(&quot;Saving scene to: &quot; + save_path)
+        var error = ResourceSaver.save(packed_scene, save_path)
+        if debug_mode:
+            print(&quot;Save result: &quot; + str(error) + &quot; (OK=&quot; + str(OK) + &quot;)&quot;)
+        
+        if error == OK:
+            # Verify the file was actually created/updated
+            if debug_mode:
+                var file_check_after = FileAccess.file_exists(save_path)
+                print(&quot;File exists check after save: &quot; + str(file_check_after))
+                
+                if file_check_after:
+                    print(&quot;Scene saved successfully to: &quot; + save_path)
+                    # Get the absolute path for reference
+                    var absolute_path = ProjectSettings.globalize_path(save_path)
+                    print(&quot;Absolute file path: &quot; + absolute_path)
+                else:
+                    printerr(&quot;File reported as saved but does not exist at: &quot; + save_path)
+            else:
+                print(&quot;Scene saved successfully to: &quot; + save_path)
+        else:
+            printerr(&quot;Failed to save scene: &quot; + str(error))
+    else:
+        printerr(&quot;Failed to pack scene: &quot; + str(result))</file><file path="src/index.ts">#!/usr/bin/env node
+/**
+ * Godot MCP Server
+ *
+ * This MCP server provides tools for interacting with the Godot game engine.
+ * It enables AI assistants to launch the Godot editor, run Godot projects,
+ * capture debug output, and control project execution.
+ */
+
+import { fileURLToPath } from &apos;url&apos;;
+import { join, dirname, basename, normalize } from &apos;path&apos;;
+import { existsSync, readdirSync, mkdirSync } from &apos;fs&apos;;
+import { spawn, execFile } from &apos;child_process&apos;;
+import { promisify } from &apos;util&apos;;
+
+import { Server } from &apos;@modelcontextprotocol/sdk/server/index.js&apos;;
+import { StdioServerTransport } from &apos;@modelcontextprotocol/sdk/server/stdio.js&apos;;
+import {
+  CallToolRequestSchema,
+  ErrorCode,
+  ListToolsRequestSchema,
+  McpError,
+} from &apos;@modelcontextprotocol/sdk/types.js&apos;;
+
+// Check if debug mode is enabled
+const DEBUG_MODE: boolean = process.env.DEBUG === &apos;true&apos;;
+const GODOT_DEBUG_MODE: boolean = true; // Always use GODOT DEBUG MODE
+
+const execFileAsync = promisify(execFile);
+
+// Derive __filename and __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+/**
+ * Interface representing a running Godot process
+ */
+interface GodotProcess {
+  process: any;
+  output: string[];
+  errors: string[];
+}
+
+/**
+ * Interface for server configuration
+ */
+interface GodotServerConfig {
+  godotPath?: string;
+  debugMode?: boolean;
+  godotDebugMode?: boolean;
+  strictPathValidation?: boolean; // New option to control path validation behavior
+}
+
+/**
+ * Interface for operation parameters
+ */
+interface OperationParams {
+  [key: string]: any;
+}
+
+/**
+ * Main server class for the Godot MCP server
+ */
+class GodotServer {
+  private server: Server;
+  private activeProcess: GodotProcess | null = null;
+  private godotPath: string | null = null;
+  private operationsScriptPath: string;
+  private validatedPaths: Map&lt;string, boolean&gt; = new Map();
+  private strictPathValidation: boolean = false;
+
+  /**
+   * Parameter name mappings between snake_case and camelCase
+   * This allows the server to accept both formats
+   */
+  private parameterMappings: Record&lt;string, string&gt; = {
+    &apos;project_path&apos;: &apos;projectPath&apos;,
+    &apos;scene_path&apos;: &apos;scenePath&apos;,
+    &apos;root_node_type&apos;: &apos;rootNodeType&apos;,
+    &apos;parent_node_path&apos;: &apos;parentNodePath&apos;,
+    &apos;node_type&apos;: &apos;nodeType&apos;,
+    &apos;node_name&apos;: &apos;nodeName&apos;,
+    &apos;texture_path&apos;: &apos;texturePath&apos;,
+    &apos;node_path&apos;: &apos;nodePath&apos;,
+    &apos;output_path&apos;: &apos;outputPath&apos;,
+    &apos;mesh_item_names&apos;: &apos;meshItemNames&apos;,
+    &apos;new_path&apos;: &apos;newPath&apos;,
+    &apos;file_path&apos;: &apos;filePath&apos;,
+    &apos;directory&apos;: &apos;directory&apos;,
+    &apos;recursive&apos;: &apos;recursive&apos;,
+    &apos;scene&apos;: &apos;scene&apos;,
+  };
+
+  /**
+   * Reverse mapping from camelCase to snake_case
+   * Generated from parameterMappings for quick lookups
+   */
+  private reverseParameterMappings: Record&lt;string, string&gt; = {};
+
+  constructor(config?: GodotServerConfig) {
+    // Initialize reverse parameter mappings
+    for (const [snakeCase, camelCase] of Object.entries(this.parameterMappings)) {
+      this.reverseParameterMappings[camelCase] = snakeCase;
+    }
+    // Apply configuration if provided
+    let debugMode = DEBUG_MODE;
+    let godotDebugMode = GODOT_DEBUG_MODE;
+
+    if (config) {
+      if (config.debugMode !== undefined) {
+        debugMode = config.debugMode;
+      }
+      if (config.godotDebugMode !== undefined) {
+        godotDebugMode = config.godotDebugMode;
+      }
+      if (config.strictPathValidation !== undefined) {
+        this.strictPathValidation = config.strictPathValidation;
+      }
+
+      // Store and validate custom Godot path if provided
+      if (config.godotPath) {
+        const normalizedPath = normalize(config.godotPath);
+        this.godotPath = normalizedPath;
+        this.logDebug(`Custom Godot path provided: ${this.godotPath}`);
+
+        // Validate immediately with sync check
+        if (!this.isValidGodotPathSync(this.godotPath)) {
+          console.warn(`[SERVER] Invalid custom Godot path provided: ${this.godotPath}`);
+          this.godotPath = null; // Reset to trigger auto-detection later
+        }
+      }
+    }
+
+    // Set the path to the operations script
+    this.operationsScriptPath = join(__dirname, &apos;scripts&apos;, &apos;godot_operations.gd&apos;);
+    if (debugMode) console.error(`[DEBUG] Operations script path: ${this.operationsScriptPath}`);
+
+    // Initialize the MCP server
+    this.server = new Server(
+      {
+        name: &apos;godot-mcp&apos;,
+        version: &apos;0.1.0&apos;,
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
+
+    // Set up tool handlers
+    this.setupToolHandlers();
+
+    // Error handling
+    this.server.onerror = (error) =&gt; console.error(&apos;[MCP Error]&apos;, error);
+
+    // Cleanup on exit
+    process.on(&apos;SIGINT&apos;, async () =&gt; {
+      await this.cleanup();
+      process.exit(0);
+    });
+  }
+
+  /**
+   * Log debug messages if debug mode is enabled
+   * Using stderr instead of stdout to avoid interfering with JSON-RPC communication
+   */
+  private logDebug(message: string): void {
+    if (DEBUG_MODE) {
+      console.error(`[DEBUG] ${message}`);
+    }
+  }
+
+  /**
+   * Create a standardized error response with possible solutions
+   */
+  private createErrorResponse(message: string, possibleSolutions: string[] = []): any {
+    // Log the error
+    console.error(`[SERVER] Error response: ${message}`);
+    if (possibleSolutions.length &gt; 0) {
+      console.error(`[SERVER] Possible solutions: ${possibleSolutions.join(&apos;, &apos;)}`);
+    }
+
+    const response: any = {
+      content: [
+        {
+          type: &apos;text&apos;,
+          text: message,
+        },
+      ],
+      isError: true,
+    };
+
+    if (possibleSolutions.length &gt; 0) {
+      response.content.push({
+        type: &apos;text&apos;,
+        text: &apos;Possible solutions:\n- &apos; + possibleSolutions.join(&apos;\n- &apos;),
+      });
+    }
+
+    return response;
+  }
+
+  /**
+   * Validate a path to prevent path traversal attacks
+   */
+  private validatePath(path: string): boolean {
+    // Basic validation to prevent path traversal
+    if (!path || path.includes(&apos;..&apos;)) {
+      return false;
+    }
+
+    // Add more validation as needed
+    return true;
+  }
+
+  /**
+   * Validate a Godot class name to prevent arbitrary script instantiation.
+   * Class names must be simple identifiers (e.g. &quot;Node2D&quot;, &quot;CharacterBody3D&quot;).
+   * Rejects anything that looks like a path (res://, absolute paths, dots, slashes, colons).
+   */
+  private validateClassName(name: string): boolean {
+    if (!name) return false;
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name);
+  }
+
+  /**
+   * Synchronous validation for constructor use
+   * This is a quick check that only verifies file existence, not executable validity
+   * Full validation will be performed later in detectGodotPath
+   * @param path Path to check
+   * @returns True if the path exists or is &apos;godot&apos; (which might be in PATH)
+   */
+  private isValidGodotPathSync(path: string): boolean {
+    try {
+      this.logDebug(`Quick-validating Godot path: ${path}`);
+      return path === &apos;godot&apos; || existsSync(path);
+    } catch (error) {
+      this.logDebug(`Invalid Godot path: ${path}, error: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Validate if a Godot path is valid and executable
+   */
+  private async isValidGodotPath(path: string): Promise&lt;boolean&gt; {
+    // Check cache first
+    if (this.validatedPaths.has(path)) {
+      return this.validatedPaths.get(path)!;
+    }
+
+    try {
+      this.logDebug(`Validating Godot path: ${path}`);
+
+      // Check if the file exists (skip for &apos;godot&apos; which might be in PATH)
+      if (path !== &apos;godot&apos; &amp;&amp; !existsSync(path)) {
+        this.logDebug(`Path does not exist: ${path}`);
+        this.validatedPaths.set(path, false);
+        return false;
+      }
+
+      // Try to execute Godot with --version flag
+      // Using execFileAsync with argument array to prevent command injection
+      await execFileAsync(path, [&apos;--version&apos;]);
+
+      this.logDebug(`Valid Godot path: ${path}`);
+      this.validatedPaths.set(path, true);
+      return true;
+    } catch (error) {
+      this.logDebug(`Invalid Godot path: ${path}, error: ${error}`);
+      this.validatedPaths.set(path, false);
+      return false;
+    }
+  }
+
+  /**
+   * Detect the Godot executable path based on the operating system
+   */
+  private async detectGodotPath() {
+    // If godotPath is already set and valid, use it
+    if (this.godotPath &amp;&amp; await this.isValidGodotPath(this.godotPath)) {
+      this.logDebug(`Using existing Godot path: ${this.godotPath}`);
+      return;
+    }
+
+    // Check environment variable next
+    if (process.env.GODOT_PATH) {
+      const normalizedPath = normalize(process.env.GODOT_PATH);
+      this.logDebug(`Checking GODOT_PATH environment variable: ${normalizedPath}`);
+      if (await this.isValidGodotPath(normalizedPath)) {
+        this.godotPath = normalizedPath;
+        this.logDebug(`Using Godot path from environment: ${this.godotPath}`);
+        return;
+      } else {
+        this.logDebug(`GODOT_PATH environment variable is invalid`);
+      }
+    }
+
+    // Auto-detect based on platform
+    const osPlatform = process.platform;
+    this.logDebug(`Auto-detecting Godot path for platform: ${osPlatform}`);
+
+    const possiblePaths: string[] = [
+      &apos;godot&apos;, // Check if &apos;godot&apos; is in PATH first
+    ];
+
+    // Add platform-specific paths
+    if (osPlatform === &apos;darwin&apos;) {
+      possiblePaths.push(
+        &apos;/Applications/Godot.app/Contents/MacOS/Godot&apos;,
+        &apos;/Applications/Godot_4.app/Contents/MacOS/Godot&apos;,
+        `${process.env.HOME}/Applications/Godot.app/Contents/MacOS/Godot`,
+        `${process.env.HOME}/Applications/Godot_4.app/Contents/MacOS/Godot`,
+        `${process.env.HOME}/Library/Application Support/Steam/steamapps/common/Godot Engine/Godot.app/Contents/MacOS/Godot`
+      );
+    } else if (osPlatform === &apos;win32&apos;) {
+      possiblePaths.push(
+        &apos;C:\\Program Files\\Godot\\Godot.exe&apos;,
+        &apos;C:\\Program Files (x86)\\Godot\\Godot.exe&apos;,
+        &apos;C:\\Program Files\\Godot_4\\Godot.exe&apos;,
+        &apos;C:\\Program Files (x86)\\Godot_4\\Godot.exe&apos;,
+        `${process.env.USERPROFILE}\\Godot\\Godot.exe`
+      );
+    } else if (osPlatform === &apos;linux&apos;) {
+      possiblePaths.push(
+        &apos;/usr/bin/godot&apos;,
+        &apos;/usr/local/bin/godot&apos;,
+        &apos;/snap/bin/godot&apos;,
+        `${process.env.HOME}/.local/bin/godot`
+      );
+    }
+
+    // Try each possible path
+    for (const path of possiblePaths) {
+      const normalizedPath = normalize(path);
+      if (await this.isValidGodotPath(normalizedPath)) {
+        this.godotPath = normalizedPath;
+        this.logDebug(`Found Godot at: ${normalizedPath}`);
+        return;
+      }
+    }
+
+    // If we get here, we couldn&apos;t find Godot
+    this.logDebug(`Warning: Could not find Godot in common locations for ${osPlatform}`);
+    console.error(`[SERVER] Could not find Godot in common locations for ${osPlatform}`);
+    console.error(`[SERVER] Set GODOT_PATH=/path/to/godot environment variable or pass { godotPath: &apos;/path/to/godot&apos; } in the config to specify the correct path.`);
+
+    if (this.strictPathValidation) {
+      // In strict mode, throw an error
+      throw new Error(`Could not find a valid Godot executable. Set GODOT_PATH or provide a valid path in config.`);
+    } else {
+      // Fallback to a default path in non-strict mode; this may not be valid and requires user configuration for reliability
+      if (osPlatform === &apos;win32&apos;) {
+        this.godotPath = normalize(&apos;C:\\Program Files\\Godot\\Godot.exe&apos;);
+      } else if (osPlatform === &apos;darwin&apos;) {
+        this.godotPath = normalize(&apos;/Applications/Godot.app/Contents/MacOS/Godot&apos;);
+      } else {
+        this.godotPath = normalize(&apos;/usr/bin/godot&apos;);
+      }
+
+      this.logDebug(`Using default path: ${this.godotPath}, but this may not work.`);
+      console.error(`[SERVER] Using default path: ${this.godotPath}, but this may not work.`);
+      console.error(`[SERVER] This fallback behavior will be removed in a future version. Set strictPathValidation: true to opt-in to the new behavior.`);
+    }
+  }
+
+  /**
+   * Set a custom Godot path
+   * @param customPath Path to the Godot executable
+   * @returns True if the path is valid and was set, false otherwise
+   */
+  public async setGodotPath(customPath: string): Promise&lt;boolean&gt; {
+    if (!customPath) {
+      return false;
+    }
+
+    // Normalize the path to ensure consistent format across platforms
+    // (e.g., backslashes to forward slashes on Windows, resolving relative paths)
+    const normalizedPath = normalize(customPath);
+    if (await this.isValidGodotPath(normalizedPath)) {
+      this.godotPath = normalizedPath;
+      this.logDebug(`Godot path set to: ${normalizedPath}`);
+      return true;
+    }
+
+    this.logDebug(`Failed to set invalid Godot path: ${normalizedPath}`);
+    return false;
+  }
+
+  /**
+   * Clean up resources when shutting down
+   */
+  private async cleanup() {
+    this.logDebug(&apos;Cleaning up resources&apos;);
+    if (this.activeProcess) {
+      this.logDebug(&apos;Killing active Godot process&apos;);
+      this.activeProcess.process.kill();
+      this.activeProcess = null;
+    }
+    await this.server.close();
+  }
+
+  /**
+   * Check if the Godot version is 4.4 or later
+   * @param version The Godot version string
+   * @returns True if the version is 4.4 or later
+   */
+  private isGodot44OrLater(version: string): boolean {
+    const match = version.match(/^(\d+)\.(\d+)/);
+    if (match) {
+      const major = parseInt(match[1], 10);
+      const minor = parseInt(match[2], 10);
+      return major &gt; 4 || (major === 4 &amp;&amp; minor &gt;= 4);
+    }
+    return false;
+  }
+
+  /**
+   * Normalize parameters to camelCase format
+   * @param params Object with either snake_case or camelCase keys
+   * @returns Object with all keys in camelCase format
+   */
+  private normalizeParameters(params: OperationParams): OperationParams {
+    if (!params || typeof params !== &apos;object&apos;) {
+      return params;
+    }
+    
+    const result: OperationParams = {};
+    
+    for (const key in params) {
+      if (Object.prototype.hasOwnProperty.call(params, key)) {
+        let normalizedKey = key;
+        
+        // If the key is in snake_case, convert it to camelCase using our mapping
+        if (key.includes(&apos;_&apos;) &amp;&amp; this.parameterMappings[key]) {
+          normalizedKey = this.parameterMappings[key];
+        }
+        
+        // Handle nested objects recursively
+        if (typeof params[key] === &apos;object&apos; &amp;&amp; params[key] !== null &amp;&amp; !Array.isArray(params[key])) {
+          result[normalizedKey] = this.normalizeParameters(params[key] as OperationParams);
+        } else {
+          result[normalizedKey] = params[key];
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Convert camelCase keys to snake_case
+   * @param params Object with camelCase keys
+   * @returns Object with snake_case keys
+   */
+  private convertCamelToSnakeCase(params: OperationParams): OperationParams {
+    const result: OperationParams = {};
+    
+    for (const key in params) {
+      if (Object.prototype.hasOwnProperty.call(params, key)) {
+        // Convert camelCase to snake_case
+        const snakeKey = this.reverseParameterMappings[key] || key.replace(/[A-Z]/g, letter =&gt; `_${letter.toLowerCase()}`);
+        
+        // Handle nested objects recursively
+        if (typeof params[key] === &apos;object&apos; &amp;&amp; params[key] !== null &amp;&amp; !Array.isArray(params[key])) {
+          result[snakeKey] = this.convertCamelToSnakeCase(params[key] as OperationParams);
+        } else {
+          result[snakeKey] = params[key];
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Execute a Godot operation using the operations script
+   * @param operation The operation to execute
+   * @param params The parameters for the operation
+   * @param projectPath The path to the Godot project
+   * @returns The stdout and stderr from the operation
+   */
+  private async executeOperation(
+    operation: string,
+    params: OperationParams,
+    projectPath: string
+  ): Promise&lt;{ stdout: string; stderr: string }&gt; {
+    this.logDebug(`Executing operation: ${operation} in project: ${projectPath}`);
+    this.logDebug(`Original operation params: ${JSON.stringify(params)}`);
+
+    // Convert camelCase parameters to snake_case for Godot script
+    const snakeCaseParams = this.convertCamelToSnakeCase(params);
+    this.logDebug(`Converted snake_case params: ${JSON.stringify(snakeCaseParams)}`);
+
+
+    // Ensure godotPath is set
+    if (!this.godotPath) {
+      await this.detectGodotPath();
+      if (!this.godotPath) {
+        throw new Error(&apos;Could not find a valid Godot executable path&apos;);
+      }
+    }
+
+    try {
+      // Serialize the snake_case parameters to a valid JSON string
+      const paramsJson = JSON.stringify(snakeCaseParams);
+
+      // Build argument array for execFile to prevent command injection
+      // Using execFile with argument arrays avoids shell interpretation entirely
+      const args = [
+        &apos;--headless&apos;,
+        &apos;--path&apos;,
+        projectPath,  // Safe: passed as argument, not interpolated into shell command
+        &apos;--script&apos;,
+        this.operationsScriptPath,
+        operation,
+        paramsJson,  // Safe: passed as argument, not interpreted by shell
+      ];
+
+      
+      if (GODOT_DEBUG_MODE) {
+        args.push(&apos;--debug-godot&apos;);
+      }
+
+      this.logDebug(`Executing: ${this.godotPath} ${args.join(&apos; &apos;)}`);
+
+      const { stdout, stderr } = await execFileAsync(this.godotPath!, args);
+
+      return { stdout: stdout ?? &apos;&apos;, stderr: stderr ?? &apos;&apos; };
+    } catch (error: unknown) {
+      // If execFileAsync throws, it still contains stdout/stderr
+      if (error instanceof Error &amp;&amp; &apos;stdout&apos; in error &amp;&amp; &apos;stderr&apos; in error) {
+        const execError = error as Error &amp; { stdout: string; stderr: string };
+        return {
+          stdout: execError.stdout ?? &apos;&apos;,
+          stderr: execError.stderr ?? &apos;&apos;,
+        };
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get the structure of a Godot project
+   * @param projectPath Path to the Godot project
+   * @returns Object representing the project structure
+   */
+  private async getProjectStructure(projectPath: string): Promise&lt;any&gt; {
+    try {
+      // Get top-level directories in the project
+      const entries = readdirSync(projectPath, { withFileTypes: true });
+
+      const structure: any = {
+        scenes: [],
+        scripts: [],
+        assets: [],
+        other: [],
+      };
+
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const dirName = entry.name.toLowerCase();
+
+          // Skip hidden directories
+          if (dirName.startsWith(&apos;.&apos;)) {
+            continue;
+          }
+
+          // Count files in common directories
+          if (dirName === &apos;scenes&apos; || dirName.includes(&apos;scene&apos;)) {
+            structure.scenes.push(entry.name);
+          } else if (dirName === &apos;scripts&apos; || dirName.includes(&apos;script&apos;)) {
+            structure.scripts.push(entry.name);
+          } else if (
+            dirName === &apos;assets&apos; ||
+            dirName === &apos;textures&apos; ||
+            dirName === &apos;models&apos; ||
+            dirName === &apos;sounds&apos; ||
+            dirName === &apos;music&apos;
+          ) {
+            structure.assets.push(entry.name);
+          } else {
+            structure.other.push(entry.name);
+          }
+        }
+      }
+
+      return structure;
+    } catch (error) {
+      this.logDebug(`Error getting project structure: ${error}`);
+      return { error: &apos;Failed to get project structure&apos; };
+    }
+  }
+
+  /**
+   * Find Godot projects in a directory
+   * @param directory Directory to search
+   * @param recursive Whether to search recursively
+   * @returns Array of Godot projects
+   */
+  private findGodotProjects(directory: string, recursive: boolean): Array&lt;{ path: string; name: string }&gt; {
+    const projects: Array&lt;{ path: string; name: string }&gt; = [];
+
+    try {
+      // Check if the directory itself is a Godot project
+      const projectFile = join(directory, &apos;project.godot&apos;);
+      if (existsSync(projectFile)) {
+        projects.push({
+          path: directory,
+          name: basename(directory),
+        });
+      }
+
+      // If not recursive, only check immediate subdirectories
+      if (!recursive) {
+        const entries = readdirSync(directory, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const subdir = join(directory, entry.name);
+            const projectFile = join(subdir, &apos;project.godot&apos;);
+            if (existsSync(projectFile)) {
+              projects.push({
+                path: subdir,
+                name: entry.name,
+              });
+            }
+          }
+        }
+      } else {
+        // Recursive search
+        const entries = readdirSync(directory, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const subdir = join(directory, entry.name);
+            // Skip hidden directories
+            if (entry.name.startsWith(&apos;.&apos;)) {
+              continue;
+            }
+            // Check if this directory is a Godot project
+            const projectFile = join(subdir, &apos;project.godot&apos;);
+            if (existsSync(projectFile)) {
+              projects.push({
+                path: subdir,
+                name: entry.name,
+              });
+            } else {
+              // Recursively search this directory
+              const subProjects = this.findGodotProjects(subdir, true);
+              projects.push(...subProjects);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      this.logDebug(`Error searching directory ${directory}: ${error}`);
+    }
+
+    return projects;
+  }
+
+  /**
+   * Set up the tool handlers for the MCP server
+   */
+  private setupToolHandlers() {
+    // Define available tools
+    this.server.setRequestHandler(ListToolsRequestSchema, async () =&gt; ({
+      tools: [
+        {
+          name: &apos;launch_editor&apos;,
+          description: &apos;Launch Godot editor for a specific project&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;],
+          },
+        },
+        {
+          name: &apos;run_project&apos;,
+          description: &apos;Run the Godot project and capture output&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scene: {
+                type: &apos;string&apos;,
+                description: &apos;Optional: Specific scene to run&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;],
+          },
+        },
+        {
+          name: &apos;get_debug_output&apos;,
+          description: &apos;Get the current debug output and errors&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: &apos;stop_project&apos;,
+          description: &apos;Stop the currently running Godot project&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: &apos;get_godot_version&apos;,
+          description: &apos;Get the installed Godot version&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: &apos;list_projects&apos;,
+          description: &apos;List Godot projects in a directory&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              directory: {
+                type: &apos;string&apos;,
+                description: &apos;Directory to search for Godot projects&apos;,
+              },
+              recursive: {
+                type: &apos;boolean&apos;,
+                description: &apos;Whether to search recursively (default: false)&apos;,
+              },
+            },
+            required: [&apos;directory&apos;],
+          },
+        },
+        {
+          name: &apos;get_project_info&apos;,
+          description: &apos;Retrieve metadata about a Godot project&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;],
+          },
+        },
+        {
+          name: &apos;create_scene&apos;,
+          description: &apos;Create a new Godot scene file&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scenePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path where the scene file will be saved (relative to project)&apos;,
+              },
+              rootNodeType: {
+                type: &apos;string&apos;,
+                description: &apos;Type of the root node (e.g., Node2D, Node3D)&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;scenePath&apos;],
+          },
+        },
+        {
+          name: &apos;add_node&apos;,
+          description: &apos;Add a node to an existing scene&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scenePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the scene file (relative to project)&apos;,
+              },
+              parentNodePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the parent node (e.g., &quot;root&quot; or &quot;root/Player&quot;)&apos;,
+              },
+              nodeType: {
+                type: &apos;string&apos;,
+                description: &apos;Type of node to add (e.g., Sprite2D, CollisionShape2D)&apos;,
+              },
+              nodeName: {
+                type: &apos;string&apos;,
+                description: &apos;Name for the new node&apos;,
+              },
+              properties: {
+                type: &apos;object&apos;,
+                description: &apos;Optional properties to set on the node&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;scenePath&apos;, &apos;nodeType&apos;, &apos;nodeName&apos;],
+          },
+        },
+        {
+          name: &apos;load_sprite&apos;,
+          description: &apos;Load a sprite into a Sprite2D node&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scenePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the scene file (relative to project)&apos;,
+              },
+              nodePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Sprite2D node (e.g., &quot;root/Player/Sprite2D&quot;)&apos;,
+              },
+              texturePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the texture file (relative to project)&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;scenePath&apos;, &apos;nodePath&apos;, &apos;texturePath&apos;],
+          },
+        },
+        {
+          name: &apos;export_mesh_library&apos;,
+          description: &apos;Export a scene as a MeshLibrary resource&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scenePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the scene file (.tscn) to export&apos;,
+              },
+              outputPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path where the mesh library (.res) will be saved&apos;,
+              },
+              meshItemNames: {
+                type: &apos;array&apos;,
+                items: {
+                  type: &apos;string&apos;,
+                },
+                description: &apos;Optional: Names of specific mesh items to include (defaults to all)&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;scenePath&apos;, &apos;outputPath&apos;],
+          },
+        },
+        {
+          name: &apos;save_scene&apos;,
+          description: &apos;Save changes to a scene file&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              scenePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the scene file (relative to project)&apos;,
+              },
+              newPath: {
+                type: &apos;string&apos;,
+                description: &apos;Optional: New path to save the scene to (for creating variants)&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;scenePath&apos;],
+          },
+        },
+        {
+          name: &apos;get_uid&apos;,
+          description: &apos;Get the UID for a specific file in a Godot project (for Godot 4.4+)&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+              filePath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the file (relative to project) for which to get the UID&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;, &apos;filePath&apos;],
+          },
+        },
+        {
+          name: &apos;update_project_uids&apos;,
+          description: &apos;Update UID references in a Godot project by resaving resources (for Godot 4.4+)&apos;,
+          inputSchema: {
+            type: &apos;object&apos;,
+            properties: {
+              projectPath: {
+                type: &apos;string&apos;,
+                description: &apos;Path to the Godot project directory&apos;,
+              },
+            },
+            required: [&apos;projectPath&apos;],
+          },
+        },
+      ],
+    }));
+
+    // Handle tool calls
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) =&gt; {
+      this.logDebug(`Handling tool request: ${request.params.name}`);
+      switch (request.params.name) {
+        case &apos;launch_editor&apos;:
+          return await this.handleLaunchEditor(request.params.arguments);
+        case &apos;run_project&apos;:
+          return await this.handleRunProject(request.params.arguments);
+        case &apos;get_debug_output&apos;:
+          return await this.handleGetDebugOutput();
+        case &apos;stop_project&apos;:
+          return await this.handleStopProject();
+        case &apos;get_godot_version&apos;:
+          return await this.handleGetGodotVersion();
+        case &apos;list_projects&apos;:
+          return await this.handleListProjects(request.params.arguments);
+        case &apos;get_project_info&apos;:
+          return await this.handleGetProjectInfo(request.params.arguments);
+        case &apos;create_scene&apos;:
+          return await this.handleCreateScene(request.params.arguments);
+        case &apos;add_node&apos;:
+          return await this.handleAddNode(request.params.arguments);
+        case &apos;load_sprite&apos;:
+          return await this.handleLoadSprite(request.params.arguments);
+        case &apos;export_mesh_library&apos;:
+          return await this.handleExportMeshLibrary(request.params.arguments);
+        case &apos;save_scene&apos;:
+          return await this.handleSaveScene(request.params.arguments);
+        case &apos;get_uid&apos;:
+          return await this.handleGetUid(request.params.arguments);
+        case &apos;update_project_uids&apos;:
+          return await this.handleUpdateProjectUids(request.params.arguments);
+        default:
+          throw new McpError(
+            ErrorCode.MethodNotFound,
+            `Unknown tool: ${request.params.name}`
+          );
+      }
+    });
+  }
+
+  /**
+   * Handle the launch_editor tool
+   * @param args Tool arguments
+   */
+  private async handleLaunchEditor(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath) {
+      return this.createErrorResponse(
+        &apos;Project path is required&apos;,
+        [&apos;Provide a valid path to a Godot project directory&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath)) {
+      return this.createErrorResponse(
+        &apos;Invalid project path&apos;,
+        [&apos;Provide a valid path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Ensure godotPath is set
+      if (!this.godotPath) {
+        await this.detectGodotPath();
+        if (!this.godotPath) {
+          return this.createErrorResponse(
+            &apos;Could not find a valid Godot executable path&apos;,
+            [
+              &apos;Ensure Godot is installed correctly&apos;,
+              &apos;Set GODOT_PATH environment variable to specify the correct path&apos;,
+            ]
+          );
+        }
+      }
+
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      this.logDebug(`Launching Godot editor for project: ${args.projectPath}`);
+      const process = spawn(this.godotPath, [&apos;-e&apos;, &apos;--path&apos;, args.projectPath], {
+        stdio: &apos;pipe&apos;,
+      });
+
+      process.on(&apos;error&apos;, (err: Error) =&gt; {
+        console.error(&apos;Failed to start Godot editor:&apos;, err);
+      });
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Godot editor launched successfully for project at ${args.projectPath}.`,
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : &apos;Unknown error&apos;;
+      return this.createErrorResponse(
+        `Failed to launch Godot editor: ${errorMessage}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the run_project tool
+   * @param args Tool arguments
+   */
+  private async handleRunProject(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath) {
+      return this.createErrorResponse(
+        &apos;Project path is required&apos;,
+        [&apos;Provide a valid path to a Godot project directory&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath)) {
+      return this.createErrorResponse(
+        &apos;Invalid project path&apos;,
+        [&apos;Provide a valid path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Kill any existing process
+      if (this.activeProcess) {
+        this.logDebug(&apos;Killing existing Godot process before starting a new one&apos;);
+        this.activeProcess.process.kill();
+      }
+
+      const cmdArgs = [&apos;-d&apos;, &apos;--path&apos;, args.projectPath];
+      if (args.scene &amp;&amp; this.validatePath(args.scene)) {
+        this.logDebug(`Adding scene parameter: ${args.scene}`);
+        cmdArgs.push(args.scene);
+      }
+
+      this.logDebug(`Running Godot project: ${args.projectPath}`);
+      const process = spawn(this.godotPath!, cmdArgs, { stdio: &apos;pipe&apos; });
+      const output: string[] = [];
+      const errors: string[] = [];
+
+      process.stdout?.on(&apos;data&apos;, (data: Buffer) =&gt; {
+        const lines = data.toString().split(&apos;\n&apos;);
+        output.push(...lines);
+        lines.forEach((line: string) =&gt; {
+          if (line.trim()) this.logDebug(`[Godot stdout] ${line}`);
+        });
+      });
+
+      process.stderr?.on(&apos;data&apos;, (data: Buffer) =&gt; {
+        const lines = data.toString().split(&apos;\n&apos;);
+        errors.push(...lines);
+        lines.forEach((line: string) =&gt; {
+          if (line.trim()) this.logDebug(`[Godot stderr] ${line}`);
+        });
+      });
+
+      process.on(&apos;exit&apos;, (code: number | null) =&gt; {
+        this.logDebug(`Godot process exited with code ${code}`);
+        if (this.activeProcess &amp;&amp; this.activeProcess.process === process) {
+          this.activeProcess = null;
+        }
+      });
+
+      process.on(&apos;error&apos;, (err: Error) =&gt; {
+        console.error(&apos;Failed to start Godot process:&apos;, err);
+        if (this.activeProcess &amp;&amp; this.activeProcess.process === process) {
+          this.activeProcess = null;
+        }
+      });
+
+      this.activeProcess = { process, output, errors };
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Godot project started in debug mode. Use get_debug_output to see output.`,
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : &apos;Unknown error&apos;;
+      return this.createErrorResponse(
+        `Failed to run Godot project: ${errorMessage}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the get_debug_output tool
+   */
+  private async handleGetDebugOutput() {
+    if (!this.activeProcess) {
+      return this.createErrorResponse(
+        &apos;No active Godot process.&apos;,
+        [
+          &apos;Use run_project to start a Godot project first&apos;,
+          &apos;Check if the Godot process crashed unexpectedly&apos;,
+        ]
+      );
+    }
+
+    return {
+      content: [
+        {
+          type: &apos;text&apos;,
+          text: JSON.stringify(
+            {
+              output: this.activeProcess.output,
+              errors: this.activeProcess.errors,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle the stop_project tool
+   */
+  private async handleStopProject() {
+    if (!this.activeProcess) {
+      return this.createErrorResponse(
+        &apos;No active Godot process to stop.&apos;,
+        [
+          &apos;Use run_project to start a Godot project first&apos;,
+          &apos;The process may have already terminated&apos;,
+        ]
+      );
+    }
+
+    this.logDebug(&apos;Stopping active Godot process&apos;);
+    this.activeProcess.process.kill();
+    const output = this.activeProcess.output;
+    const errors = this.activeProcess.errors;
+    this.activeProcess = null;
+
+    return {
+      content: [
+        {
+          type: &apos;text&apos;,
+          text: JSON.stringify(
+            {
+              message: &apos;Godot project stopped&apos;,
+              finalOutput: output,
+              finalErrors: errors,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle the get_godot_version tool
+   */
+  private async handleGetGodotVersion() {
+    try {
+      // Ensure godotPath is set
+      if (!this.godotPath) {
+        await this.detectGodotPath();
+        if (!this.godotPath) {
+          return this.createErrorResponse(
+            &apos;Could not find a valid Godot executable path&apos;,
+            [
+              &apos;Ensure Godot is installed correctly&apos;,
+              &apos;Set GODOT_PATH environment variable to specify the correct path&apos;,
+            ]
+          );
+        }
+      }
+
+      this.logDebug(&apos;Getting Godot version&apos;);
+      const { stdout } = await execFileAsync(this.godotPath!, [&apos;--version&apos;]);
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: stdout.trim(),
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : &apos;Unknown error&apos;;
+      return this.createErrorResponse(
+        `Failed to get Godot version: ${errorMessage}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the list_projects tool
+   */
+  private async handleListProjects(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.directory) {
+      return this.createErrorResponse(
+        &apos;Directory is required&apos;,
+        [&apos;Provide a valid directory path to search for Godot projects&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.directory)) {
+      return this.createErrorResponse(
+        &apos;Invalid directory path&apos;,
+        [&apos;Provide a valid path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      this.logDebug(`Listing Godot projects in directory: ${args.directory}`);
+      if (!existsSync(args.directory)) {
+        return this.createErrorResponse(
+          `Directory does not exist: ${args.directory}`,
+          [&apos;Provide a valid directory path that exists on the system&apos;]
+        );
+      }
+
+      const recursive = args.recursive === true;
+      const projects = this.findGodotProjects(args.directory, recursive);
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: JSON.stringify(projects, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to list projects: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure the directory exists and is accessible&apos;,
+          &apos;Check if you have permission to read the directory&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Get the structure of a Godot project asynchronously by counting files recursively
+   * @param projectPath Path to the Godot project
+   * @returns Promise resolving to an object with counts of scenes, scripts, assets, and other files
+   */
+  private getProjectStructureAsync(projectPath: string): Promise&lt;any&gt; {
+    return new Promise((resolve) =&gt; {
+      try {
+        const structure = {
+          scenes: 0,
+          scripts: 0,
+          assets: 0,
+          other: 0,
+        };
+
+        const scanDirectory = (currentPath: string) =&gt; {
+          const entries = readdirSync(currentPath, { withFileTypes: true });
+          
+          for (const entry of entries) {
+            const entryPath = join(currentPath, entry.name);
+            
+            // Skip hidden files and directories
+            if (entry.name.startsWith(&apos;.&apos;)) {
+              continue;
+            }
+            
+            if (entry.isDirectory()) {
+              // Recursively scan subdirectories
+              scanDirectory(entryPath);
+            } else if (entry.isFile()) {
+              // Count file by extension
+              const ext = entry.name.split(&apos;.&apos;).pop()?.toLowerCase();
+              
+              if (ext === &apos;tscn&apos;) {
+                structure.scenes++;
+              } else if (ext === &apos;gd&apos; || ext === &apos;gdscript&apos; || ext === &apos;cs&apos;) {
+                structure.scripts++;
+              } else if ([&apos;png&apos;, &apos;jpg&apos;, &apos;jpeg&apos;, &apos;webp&apos;, &apos;svg&apos;, &apos;ttf&apos;, &apos;wav&apos;, &apos;mp3&apos;, &apos;ogg&apos;].includes(ext || &apos;&apos;)) {
+                structure.assets++;
+              } else {
+                structure.other++;
+              }
+            }
+          }
+        };
+        
+        // Start scanning from the project root
+        scanDirectory(projectPath);
+        resolve(structure);
+      } catch (error) {
+        this.logDebug(`Error getting project structure asynchronously: ${error}`);
+        resolve({ 
+          error: &apos;Failed to get project structure&apos;,
+          scenes: 0,
+          scripts: 0,
+          assets: 0,
+          other: 0
+        });
+      }
+    });
+  }
+
+  /**
+   * Handle the get_project_info tool
+   */
+  private async handleGetProjectInfo(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath) {
+      return this.createErrorResponse(
+        &apos;Project path is required&apos;,
+        [&apos;Provide a valid path to a Godot project directory&apos;]
+      );
+    }
+  
+    if (!this.validatePath(args.projectPath)) {
+      return this.createErrorResponse(
+        &apos;Invalid project path&apos;,
+        [&apos;Provide a valid path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+  
+    try {
+      // Ensure godotPath is set
+      if (!this.godotPath) {
+        await this.detectGodotPath();
+        if (!this.godotPath) {
+          return this.createErrorResponse(
+            &apos;Could not find a valid Godot executable path&apos;,
+            [
+              &apos;Ensure Godot is installed correctly&apos;,
+              &apos;Set GODOT_PATH environment variable to specify the correct path&apos;,
+            ]
+          );
+        }
+      }
+  
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+  
+      this.logDebug(`Getting project info for: ${args.projectPath}`);
+  
+      // Get Godot version
+      const execOptions = { timeout: 10000 }; // 10 second timeout
+      const { stdout } = await execFileAsync(this.godotPath!, [&apos;--version&apos;], execOptions);
+  
+      // Get project structure using the recursive method
+      const projectStructure = await this.getProjectStructureAsync(args.projectPath);
+  
+      // Extract project name from project.godot file
+      let projectName = basename(args.projectPath);
+      try {
+        const fs = require(&apos;fs&apos;);
+        const projectFileContent = fs.readFileSync(projectFile, &apos;utf8&apos;);
+        const configNameMatch = projectFileContent.match(/config\/name=&quot;([^&quot;]+)&quot;/);
+        if (configNameMatch &amp;&amp; configNameMatch[1]) {
+          projectName = configNameMatch[1];
+          this.logDebug(`Found project name in config: ${projectName}`);
+        }
+      } catch (error) {
+        this.logDebug(`Error reading project file: ${error}`);
+        // Continue with default project name if extraction fails
+      }
+  
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: JSON.stringify(
+              {
+                name: projectName,
+                path: args.projectPath,
+                godotVersion: stdout.trim(),
+                structure: projectStructure,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to get project info: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the create_scene tool
+   */
+  private async handleCreateScene(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.scenePath) {
+      return this.createErrorResponse(
+        &apos;Project path and scene path are required&apos;,
+        [&apos;Provide valid paths for both the project and the scene&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath) || !this.validatePath(args.scenePath)) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    const rootNodeType = args.rootNodeType || &apos;Node2D&apos;;
+    if (!this.validateClassName(rootNodeType)) {
+      return this.createErrorResponse(
+        &apos;Invalid rootNodeType&apos;,
+        [&apos;rootNodeType must be a built-in Godot class name (no paths, no file extensions)&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params = {
+        scenePath: args.scenePath,
+        rootNodeType,
+      };
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;create_scene&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to create scene: ${stderr}`,
+          [
+            &apos;Check if the root node type is valid&apos;,
+            &apos;Ensure you have write permissions to the scene path&apos;,
+            &apos;Verify the scene path is valid&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Scene created successfully at: ${args.scenePath}\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to create scene: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the add_node tool
+   */
+  private async handleAddNode(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.scenePath || !args.nodeType || !args.nodeName) {
+      return this.createErrorResponse(
+        &apos;Missing required parameters&apos;,
+        [&apos;Provide projectPath, scenePath, nodeType, and nodeName&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath) || !this.validatePath(args.scenePath)) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    if (!this.validateClassName(args.nodeType)) {
+      return this.createErrorResponse(
+        &apos;Invalid nodeType&apos;,
+        [&apos;nodeType must be a built-in Godot class name (no paths, no file extensions)&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Check if the scene file exists
+      const scenePath = join(args.projectPath, args.scenePath);
+      if (!existsSync(scenePath)) {
+        return this.createErrorResponse(
+          `Scene file does not exist: ${args.scenePath}`,
+          [
+            &apos;Ensure the scene path is correct&apos;,
+            &apos;Use create_scene to create a new scene first&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params: any = {
+        scenePath: args.scenePath,
+        nodeType: args.nodeType,
+        nodeName: args.nodeName,
+      };
+
+      // Add optional parameters
+      if (args.parentNodePath) {
+        params.parentNodePath = args.parentNodePath;
+      }
+
+      if (args.properties) {
+        params.properties = args.properties;
+      }
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;add_node&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to add node: ${stderr}`,
+          [
+            &apos;Check if the node type is valid&apos;,
+            &apos;Ensure the parent node path exists&apos;,
+            &apos;Verify the scene file is valid&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Node &apos;${args.nodeName}&apos; of type &apos;${args.nodeType}&apos; added successfully to &apos;${args.scenePath}&apos;.\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to add node: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the load_sprite tool
+   */
+  private async handleLoadSprite(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.scenePath || !args.nodePath || !args.texturePath) {
+      return this.createErrorResponse(
+        &apos;Missing required parameters&apos;,
+        [&apos;Provide projectPath, scenePath, nodePath, and texturePath&apos;]
+      );
+    }
+
+    if (
+      !this.validatePath(args.projectPath) ||
+      !this.validatePath(args.scenePath) ||
+      !this.validatePath(args.nodePath) ||
+      !this.validatePath(args.texturePath)
+    ) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Check if the scene file exists
+      const scenePath = join(args.projectPath, args.scenePath);
+      if (!existsSync(scenePath)) {
+        return this.createErrorResponse(
+          `Scene file does not exist: ${args.scenePath}`,
+          [
+            &apos;Ensure the scene path is correct&apos;,
+            &apos;Use create_scene to create a new scene first&apos;,
+          ]
+        );
+      }
+
+      // Check if the texture file exists
+      const texturePath = join(args.projectPath, args.texturePath);
+      if (!existsSync(texturePath)) {
+        return this.createErrorResponse(
+          `Texture file does not exist: ${args.texturePath}`,
+          [
+            &apos;Ensure the texture path is correct&apos;,
+            &apos;Upload or create the texture file first&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params = {
+        scenePath: args.scenePath,
+        nodePath: args.nodePath,
+        texturePath: args.texturePath,
+      };
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;load_sprite&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to load sprite: ${stderr}`,
+          [
+            &apos;Check if the node path is correct&apos;,
+            &apos;Ensure the node is a Sprite2D, Sprite3D, or TextureRect&apos;,
+            &apos;Verify the texture file is a valid image format&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Sprite loaded successfully with texture: ${args.texturePath}\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to load sprite: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the export_mesh_library tool
+   */
+  private async handleExportMeshLibrary(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.scenePath || !args.outputPath) {
+      return this.createErrorResponse(
+        &apos;Missing required parameters&apos;,
+        [&apos;Provide projectPath, scenePath, and outputPath&apos;]
+      );
+    }
+
+    if (
+      !this.validatePath(args.projectPath) ||
+      !this.validatePath(args.scenePath) ||
+      !this.validatePath(args.outputPath)
+    ) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Check if the scene file exists
+      const scenePath = join(args.projectPath, args.scenePath);
+      if (!existsSync(scenePath)) {
+        return this.createErrorResponse(
+          `Scene file does not exist: ${args.scenePath}`,
+          [
+            &apos;Ensure the scene path is correct&apos;,
+            &apos;Use create_scene to create a new scene first&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params: any = {
+        scenePath: args.scenePath,
+        outputPath: args.outputPath,
+      };
+
+      // Add optional parameters
+      if (args.meshItemNames &amp;&amp; Array.isArray(args.meshItemNames)) {
+        params.meshItemNames = args.meshItemNames;
+      }
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;export_mesh_library&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to export mesh library: ${stderr}`,
+          [
+            &apos;Check if the scene contains valid 3D meshes&apos;,
+            &apos;Ensure the output path is valid&apos;,
+            &apos;Verify the scene file is valid&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `MeshLibrary exported successfully to: ${args.outputPath}\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to export mesh library: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the save_scene tool
+   */
+  private async handleSaveScene(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.scenePath) {
+      return this.createErrorResponse(
+        &apos;Missing required parameters&apos;,
+        [&apos;Provide projectPath and scenePath&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath) || !this.validatePath(args.scenePath)) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    // If newPath is provided, validate it
+    if (args.newPath &amp;&amp; !this.validatePath(args.newPath)) {
+      return this.createErrorResponse(
+        &apos;Invalid new path&apos;,
+        [&apos;Provide a valid new path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Check if the scene file exists
+      const scenePath = join(args.projectPath, args.scenePath);
+      if (!existsSync(scenePath)) {
+        return this.createErrorResponse(
+          `Scene file does not exist: ${args.scenePath}`,
+          [
+            &apos;Ensure the scene path is correct&apos;,
+            &apos;Use create_scene to create a new scene first&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params: any = {
+        scenePath: args.scenePath,
+      };
+
+      // Add optional parameters
+      if (args.newPath) {
+        params.newPath = args.newPath;
+      }
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;save_scene&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to save scene: ${stderr}`,
+          [
+            &apos;Check if the scene file is valid&apos;,
+            &apos;Ensure you have write permissions to the output path&apos;,
+            &apos;Verify the scene can be properly packed&apos;,
+          ]
+        );
+      }
+
+      const savePath = args.newPath || args.scenePath;
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Scene saved successfully to: ${savePath}\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to save scene: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the get_uid tool
+   */
+  private async handleGetUid(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath || !args.filePath) {
+      return this.createErrorResponse(
+        &apos;Missing required parameters&apos;,
+        [&apos;Provide projectPath and filePath&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath) || !this.validatePath(args.filePath)) {
+      return this.createErrorResponse(
+        &apos;Invalid path&apos;,
+        [&apos;Provide valid paths without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Ensure godotPath is set
+      if (!this.godotPath) {
+        await this.detectGodotPath();
+        if (!this.godotPath) {
+          return this.createErrorResponse(
+            &apos;Could not find a valid Godot executable path&apos;,
+            [
+              &apos;Ensure Godot is installed correctly&apos;,
+              &apos;Set GODOT_PATH environment variable to specify the correct path&apos;,
+            ]
+          );
+        }
+      }
+
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Check if the file exists
+      const filePath = join(args.projectPath, args.filePath);
+      if (!existsSync(filePath)) {
+        return this.createErrorResponse(
+          `File does not exist: ${args.filePath}`,
+          [&apos;Ensure the file path is correct&apos;]
+        );
+      }
+
+      // Get Godot version to check if UIDs are supported
+      const { stdout: versionOutput } = await execFileAsync(this.godotPath!, [&apos;--version&apos;]);
+      const version = versionOutput.trim();
+
+      if (!this.isGodot44OrLater(version)) {
+        return this.createErrorResponse(
+          `UIDs are only supported in Godot 4.4 or later. Current version: ${version}`,
+          [
+            &apos;Upgrade to Godot 4.4 or later to use UIDs&apos;,
+            &apos;Use resource paths instead of UIDs for this version of Godot&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params = {
+        filePath: args.filePath,
+      };
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;get_uid&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to get UID: ${stderr}`,
+          [
+            &apos;Check if the file is a valid Godot resource&apos;,
+            &apos;Ensure the file path is correct&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `UID for ${args.filePath}: ${stdout.trim()}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to get UID: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Handle the update_project_uids tool
+   */
+  private async handleUpdateProjectUids(args: any) {
+    // Normalize parameters to camelCase
+    args = this.normalizeParameters(args);
+    
+    if (!args.projectPath) {
+      return this.createErrorResponse(
+        &apos;Project path is required&apos;,
+        [&apos;Provide a valid path to a Godot project directory&apos;]
+      );
+    }
+
+    if (!this.validatePath(args.projectPath)) {
+      return this.createErrorResponse(
+        &apos;Invalid project path&apos;,
+        [&apos;Provide a valid path without &quot;..&quot; or other potentially unsafe characters&apos;]
+      );
+    }
+
+    try {
+      // Ensure godotPath is set
+      if (!this.godotPath) {
+        await this.detectGodotPath();
+        if (!this.godotPath) {
+          return this.createErrorResponse(
+            &apos;Could not find a valid Godot executable path&apos;,
+            [
+              &apos;Ensure Godot is installed correctly&apos;,
+              &apos;Set GODOT_PATH environment variable to specify the correct path&apos;,
+            ]
+          );
+        }
+      }
+
+      // Check if the project directory exists and contains a project.godot file
+      const projectFile = join(args.projectPath, &apos;project.godot&apos;);
+      if (!existsSync(projectFile)) {
+        return this.createErrorResponse(
+          `Not a valid Godot project: ${args.projectPath}`,
+          [
+            &apos;Ensure the path points to a directory containing a project.godot file&apos;,
+            &apos;Use list_projects to find valid Godot projects&apos;,
+          ]
+        );
+      }
+
+      // Get Godot version to check if UIDs are supported
+      const { stdout: versionOutput } = await execFileAsync(this.godotPath!, [&apos;--version&apos;]);
+      const version = versionOutput.trim();
+
+      if (!this.isGodot44OrLater(version)) {
+        return this.createErrorResponse(
+          `UIDs are only supported in Godot 4.4 or later. Current version: ${version}`,
+          [
+            &apos;Upgrade to Godot 4.4 or later to use UIDs&apos;,
+            &apos;Use resource paths instead of UIDs for this version of Godot&apos;,
+          ]
+        );
+      }
+
+      // Prepare parameters for the operation (already in camelCase)
+      const params = {
+        projectPath: args.projectPath,
+      };
+
+      // Execute the operation
+      const { stdout, stderr } = await this.executeOperation(&apos;resave_resources&apos;, params, args.projectPath);
+
+      if (stderr &amp;&amp; stderr.includes(&apos;Failed to&apos;)) {
+        return this.createErrorResponse(
+          `Failed to update project UIDs: ${stderr}`,
+          [
+            &apos;Check if the project is valid&apos;,
+            &apos;Ensure you have write permissions to the project directory&apos;,
+          ]
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: &apos;text&apos;,
+            text: `Project UIDs updated successfully.\n\nOutput: ${stdout}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return this.createErrorResponse(
+        `Failed to update project UIDs: ${error?.message || &apos;Unknown error&apos;}`,
+        [
+          &apos;Ensure Godot is installed correctly&apos;,
+          &apos;Check if the GODOT_PATH environment variable is set correctly&apos;,
+          &apos;Verify the project path is accessible&apos;,
+        ]
+      );
+    }
+  }
+
+  /**
+   * Run the MCP server
+   */
+  async run() {
+    try {
+      // Detect Godot path before starting the server
+      await this.detectGodotPath();
+
+      if (!this.godotPath) {
+        console.error(&apos;[SERVER] Failed to find a valid Godot executable path&apos;);
+        console.error(&apos;[SERVER] Please set GODOT_PATH environment variable or provide a valid path&apos;);
+        process.exit(1);
+      }
+
+      // Check if the path is valid
+      const isValid = await this.isValidGodotPath(this.godotPath);
+
+      if (!isValid) {
+        if (this.strictPathValidation) {
+          // In strict mode, exit if the path is invalid
+          console.error(`[SERVER] Invalid Godot path: ${this.godotPath}`);
+          console.error(&apos;[SERVER] Please set a valid GODOT_PATH environment variable or provide a valid path&apos;);
+          process.exit(1);
+        } else {
+          // In compatibility mode, warn but continue with the default path
+          console.error(`[SERVER] Warning: Using potentially invalid Godot path: ${this.godotPath}`);
+          console.error(&apos;[SERVER] This may cause issues when executing Godot commands&apos;);
+          console.error(&apos;[SERVER] This fallback behavior will be removed in a future version. Set strictPathValidation: true to opt-in to the new behavior.&apos;);
+        }
+      }
+
+      console.error(`[SERVER] Using Godot at: ${this.godotPath}`);
+
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      console.error(&apos;Godot MCP server running on stdio&apos;);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : &apos;Unknown error&apos;;
+      console.error(&apos;[SERVER] Failed to start:&apos;, errorMessage);
+      process.exit(1);
+    }
+  }
+}
+
+// Create and run the server
+const server = new GodotServer();
+server.run().catch((error: unknown) =&gt; {
+  const errorMessage = error instanceof Error ? error.message : &apos;Unknown error&apos;;
+  console.error(&apos;Failed to run server:&apos;, errorMessage);
+  process.exit(1);
+});</file><file path=".gitignore"># Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage directory
+coverage/</file><file path="CONTRIBUTING.md"># Contributing to Godot MCP
+
+Thank you for considering contributing to Godot MCP! This document outlines the process for contributing to the project.
+
+## Code of Conduct
+
+By participating in this project, you agree to maintain a respectful and inclusive environment for everyone.
+
+## How Can I Contribute?
+
+### Reporting Bugs
+
+- Check if the bug has already been reported in the Issues section
+- Use the bug report template if available
+- Include detailed steps to reproduce the bug
+- Include any relevant logs or screenshots
+- Specify your environment (OS, Godot version, etc.)
+
+### Suggesting Enhancements
+
+- Check if the enhancement has already been suggested in the Issues section
+- Use the feature request template if available
+- Clearly describe the enhancement and its benefits
+- Consider how the enhancement fits into the project&apos;s scope
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a new branch for your feature or bugfix (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests if available
+5. Commit your changes with clear commit messages
+6. Push to your branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## Development Process
+
+### Setting Up the Development Environment
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Build the project with `npm run build`
+4. For development with auto-rebuild, use `npm run watch`
+
+### Project Structure
+
+```
+godot-mcp/
+├── src/             # Source code
+│   └── index.ts     # Main server implementation
+├── build/           # Compiled JavaScript (generated)
+├── tests/           # Test files (future)
+├── examples/        # Example Godot projects (future)
+├── LICENSE          # MIT License
+├── README.md        # Documentation
+├── CONTRIBUTING.md  # Contribution guidelines
+├── package.json     # Project configuration
+└── tsconfig.json    # TypeScript configuration
+```
+
+### Code Style
+
+- Follow the existing code style in the project
+- Use TypeScript for type safety
+- Include JSDoc comments for all functions and classes
+- Write clear and descriptive variable and function names
+- Use meaningful interfaces for complex objects
+- Handle errors gracefully with detailed error messages
+
+### Debugging
+
+For debugging the MCP server:
+
+1. Set the `DEBUG` environment variable to `true`
+2. Use the MCP Inspector for interactive debugging:
+   ```bash
+   npm run inspector
+   ```
+3. Check the logs for detailed information about what&apos;s happening
+
+### Adding New Tools
+
+When adding new tools to the MCP server:
+
+1. Define the tool in the `setupToolHandlers` method
+2. Create a handler method for the tool
+3. Add proper input validation and error handling
+4. Update the README.md with documentation for the new tool
+5. Update the Features section in the README.md
+6. Update the autoApprove section in the configuration examples
+7. Add tests for the new functionality
+
+#### Recently Added Tools
+
+The following tools have been recently added:
+
+- **get_project_info**: Retrieves metadata about a Godot project
+  - Analyzes project structure
+  - Returns information about scenes, scripts, and assets
+  - Helps LLMs understand the organization of Godot projects
+  
+- **capture_screenshot**: Takes a screenshot of a running Godot project
+  - Requires an active Godot process
+  - Saves the screenshot to the specified path
+  - Useful for visual debugging and feedback
+
+Example:
+
+```typescript
+// In setupToolHandlers
+{
+  name: &apos;your_new_tool&apos;,
+  description: &apos;Description of what your tool does&apos;,
+  inputSchema: {
+    type: &apos;object&apos;,
+    properties: {
+      param1: {
+        type: &apos;string&apos;,
+        description: &apos;Description of parameter 1&apos;,
+      },
+    },
+    required: [&apos;param1&apos;],
+  },
+}
+
+// Add handler method
+private async handleYourNewTool(args: any) {
+  // Validate input
+  if (!args.param1) {
+    return this.createErrorResponse(
+      &apos;Parameter 1 is required&apos;,
+      [&apos;Provide a valid value for parameter 1&apos;]
+    );
+  }
+
+  try {
+    // Implement tool functionality
+    // ...
+
+    return {
+      content: [
+        {
+          type: &apos;text&apos;,
+          text: &apos;Result of your tool&apos;,
+        },
+      ],
+    };
+  } catch (error: any) {
+    return this.createErrorResponse(
+      `Failed to execute tool: ${error?.message || &apos;Unknown error&apos;}`,
+      [
+        &apos;Possible solution 1&apos;,
+        &apos;Possible solution 2&apos;
+      ]
+    );
+  }
+}
+```
+
+### Cross-Platform Compatibility
+
+When making changes, ensure they work across different platforms:
+
+- Use path utilities from Node.js (`path.join`, etc.) instead of hardcoded path separators
+- Test on different operating systems if possible
+- Consider different Godot installation locations
+- Use environment variables for configuration
+
+## Testing
+
+- Add tests for new features when possible
+- Ensure all tests pass before submitting a Pull Request
+- Test on different platforms if possible
+- Test with different Godot versions
+
+## Documentation
+
+- Keep README.md up to date with new features
+- Document all tools and their parameters
+- Include examples for new functionality
+- Update the troubleshooting section with common issues
+
+## Questions?
+
+If you have any questions about contributing, feel free to open an issue for discussion.
+
+Thank you for your contributions!</file><file path="LICENSE">MIT License
+
+Copyright (c) 2025 Solomon Elias
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</file><file path="package.json">{
+  &quot;name&quot;: &quot;godot-mcp&quot;,
+  &quot;version&quot;: &quot;0.1.1&quot;,
+  &quot;description&quot;: &quot;MCP server for interfacing with Godot game engine. Provides tools for launching the editor, running projects, and capturing debug output.&quot;,
+  &quot;keywords&quot;: [
+    &quot;godot&quot;,
+    &quot;mcp&quot;,
+    &quot;ai&quot;,
+    &quot;claude&quot;,
+    &quot;cline&quot;
+  ],
+  &quot;homepage&quot;: &quot;https://github.com/Coding-Solo/godot-mcp&quot;,
+  &quot;bugs&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Coding-Solo/godot-mcp/issues&quot;
+  },
+  &quot;repository&quot;: {
+    &quot;type&quot;: &quot;git&quot;,
+    &quot;url&quot;: &quot;https://github.com/Coding-Solo/godot-mcp.git&quot;
+  },
+  &quot;license&quot;: &quot;MIT&quot;,
+  &quot;author&quot;: &quot;Solomon Elias &lt;solomon@sippy.ai&gt;&quot;,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;bin&quot;: {
+    &quot;godot-mcp&quot;: &quot;./build/index.js&quot;
+  },
+  &quot;files&quot;: [
+    &quot;build&quot;
+  ],
+  &quot;scripts&quot;: {
+    &quot;build&quot;: &quot;tsc &amp;&amp; node scripts/build.js&quot;,
+    &quot;inspector&quot;: &quot;npx @modelcontextprotocol/inspector build/index.js&quot;,
+    &quot;prepare&quot;: &quot;npm run build&quot;,
+    &quot;watch&quot;: &quot;tsc --watch&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;@modelcontextprotocol/sdk&quot;: &quot;0.6.0&quot;,
+    &quot;axios&quot;: &quot;^1.7.9&quot;,
+    &quot;fs-extra&quot;: &quot;^11.2.0&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@types/node&quot;: &quot;^20.11.24&quot;,
+    &quot;typescript&quot;: &quot;^5.3.3&quot;
+  },
+  &quot;engines&quot;: {
+    &quot;node&quot;: &quot;&gt;=18.0.0&quot;
+  }
+}</file><file path="README.md"># Godot MCP
+
+[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&amp;logo=GitHub-Sponsors&amp;logoColor=#EA4AAA)](https://github.com/sponsors/Coding-Solo)
+
+[![](https://badge.mcpx.dev?type=server &apos;MCP Server&apos;)](https://modelcontextprotocol.io/introduction)
+[![Made with Godot](https://img.shields.io/badge/Made%20with-Godot-478CBF?style=flat&amp;logo=godot%20engine&amp;logoColor=white)](https://godotengine.org)
+[![](https://img.shields.io/badge/Node.js-339933?style=flat&amp;logo=nodedotjs&amp;logoColor=white &apos;Node.js&apos;)](https://nodejs.org/en/download/)
+[![](https://img.shields.io/badge/TypeScript-3178C6?style=flat&amp;logo=typescript&amp;logoColor=white &apos;TypeScript&apos;)](https://www.typescriptlang.org/)
+
+[![](https://img.shields.io/github/last-commit/Coding-Solo/godot-mcp &apos;Last Commit&apos;)](https://github.com/Coding-Solo/godot-mcp/commits/main)
+[![](https://img.shields.io/github/stars/Coding-Solo/godot-mcp &apos;Stars&apos;)](https://github.com/Coding-Solo/godot-mcp/stargazers)
+[![](https://img.shields.io/github/forks/Coding-Solo/godot-mcp &apos;Forks&apos;)](https://github.com/Coding-Solo/godot-mcp/network/members)
+[![](https://img.shields.io/badge/License-MIT-red.svg &apos;MIT License&apos;)](https://opensource.org/licenses/MIT)
+
+
+```text
+                           (((((((             (((((((
+                        (((((((((((           (((((((((((
+                        (((((((((((((       (((((((((((((
+                        (((((((((((((((((((((((((((((((((
+                        (((((((((((((((((((((((((((((((((
+         (((((      (((((((((((((((((((((((((((((((((((((((((      (((((
+       (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+     ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+    ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+      (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+        (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+         (((((((((((@@@@@@@(((((((((((((((((((((((((((@@@@@@@(((((((((((
+         (((((((((@@@@,,,,,@@@(((((((((((((((((((((@@@,,,,,@@@@(((((((((
+         ((((((((@@@,,,,,,,,,@@(((((((@@@@@(((((((@@,,,,,,,,,@@@((((((((
+         ((((((((@@@,,,,,,,,,@@(((((((@@@@@(((((((@@,,,,,,,,,@@@((((((((
+         (((((((((@@@,,,,,,,@@((((((((@@@@@((((((((@@,,,,,,,@@@(((((((((
+         ((((((((((((@@@@@@(((((((((((@@@@@(((((((((((@@@@@@((((((((((((
+         (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+         (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+         @@@@@@@@@@@@@((((((((((((@@@@@@@@@@@@@((((((((((((@@@@@@@@@@@@@
+         ((((((((( @@@(((((((((((@@(((((((((((@@(((((((((((@@@ (((((((((
+         (((((((((( @@((((((((((@@@(((((((((((@@@((((((((((@@ ((((((((((
+          (((((((((((@@@@@@@@@@@@@@(((((((((((@@@@@@@@@@@@@@(((((((((((
+           (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
+              (((((((((((((((((((((((((((((((((((((((((((((((((((((
+                 (((((((((((((((((((((((((((((((((((((((((((((((
+                        (((((((((((((((((((((((((((((((((
+
+
+                          /$$      /$$  /$$$$$$  /$$$$$$$
+                         | $$$    /$$$ /$$__  $$| $$__  $$
+                         | $$$$  /$$$$| $$  \__/| $$  \ $$
+                         | $$ $$/$$ $$| $$      | $$$$$$$/
+                         | $$  $$$| $$| $$      | $$____/
+                         | $$\  $ | $$| $$    $$| $$
+                         | $$ \/  | $$|  $$$$$$/| $$
+                         |__/     |__/ \______/ |__/
+```
+
+A Model Context Protocol (MCP) server for interacting with the Godot game engine.
+
+## Introduction
+
+Godot MCP enables AI agents to launch the Godot editor, run projects, capture debug output, and control project execution. This direct feedback loop helps agents understand what works and what doesn&apos;t in real Godot projects, leading to better code generation and debugging assistance.
+
+## Features
+
+- **Launch Godot Editor**: Open the Godot editor for a specific project
+- **Run Godot Projects**: Execute Godot projects in debug mode
+- **Capture Debug Output**: Retrieve console output and error messages
+- **Control Execution**: Start and stop Godot projects programmatically
+- **Get Godot Version**: Retrieve the installed Godot version
+- **List Godot Projects**: Find Godot projects in a specified directory
+- **Project Analysis**: Get detailed information about project structure
+- **Scene Management**:
+  - Create new scenes with specified root node types
+  - Add nodes to existing scenes with customizable properties
+  - Load sprites and textures into Sprite2D nodes
+  - Export 3D scenes as MeshLibrary resources for GridMap
+  - Save scenes with options for creating variants
+- **UID Management** (for Godot 4.4+):
+  - Get UID for specific files
+  - Update UID references by resaving resources
+
+## Requirements
+
+- [Godot Engine](https://godotengine.org/download) installed on your system
+- Node.js (&gt;=18.0.0) and npm
+- An AI agent that supports MCP
+
+## Quick Start
+
+### Claude Code
+
+```bash
+claude mcp add godot -- npx @coding-solo/godot-mcp
+```
+
+That&apos;s it. Restart Claude Code and your Godot MCP tools are available.
+
+With environment variables:
+
+```bash
+claude mcp add godot -e GODOT_PATH=/path/to/godot -e DEBUG=true -- npx @coding-solo/godot-mcp
+```
+
+&lt;details&gt;
+&lt;summary&gt;&lt;strong&gt;Cline&lt;/strong&gt;&lt;/summary&gt;
+
+Add to your Cline MCP settings file (`~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`):
+
+```json
+{
+  &quot;mcpServers&quot;: {
+    &quot;godot&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [&quot;@coding-solo/godot-mcp&quot;],
+      &quot;env&quot;: {
+        &quot;DEBUG&quot;: &quot;true&quot;
+      },
+      &quot;disabled&quot;: false,
+      &quot;autoApprove&quot;: [
+        &quot;launch_editor&quot;,
+        &quot;run_project&quot;,
+        &quot;get_debug_output&quot;,
+        &quot;stop_project&quot;,
+        &quot;get_godot_version&quot;,
+        &quot;list_projects&quot;,
+        &quot;get_project_info&quot;,
+        &quot;create_scene&quot;,
+        &quot;add_node&quot;,
+        &quot;load_sprite&quot;,
+        &quot;export_mesh_library&quot;,
+        &quot;save_scene&quot;,
+        &quot;get_uid&quot;,
+        &quot;update_project_uids&quot;
+      ]
+    }
+  }
+}
+```
+
+&lt;/details&gt;
+
+&lt;details&gt;
+&lt;summary&gt;&lt;strong&gt;Cursor&lt;/strong&gt;&lt;/summary&gt;
+
+**Using the Cursor UI:**
+
+1. Go to **Cursor Settings** &gt; **Features** &gt; **MCP**
+2. Click on the **+ Add New MCP Server** button
+3. Fill out the form:
+   - Name: `godot`
+   - Type: `command`
+   - Command: `npx @coding-solo/godot-mcp`
+4. Click &quot;Add&quot;
+5. You may need to press the refresh button in the top right corner of the MCP server card to populate the tool list
+
+**Using Project-Specific Configuration:**
+
+Create a file at `.cursor/mcp.json` in your project directory:
+
+```json
+{
+  &quot;mcpServers&quot;: {
+    &quot;godot&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [&quot;@coding-solo/godot-mcp&quot;],
+      &quot;env&quot;: {
+        &quot;DEBUG&quot;: &quot;true&quot;
+      }
+    }
+  }
+}
+```
+
+&lt;/details&gt;
+
+&lt;details&gt;
+&lt;summary&gt;&lt;strong&gt;Other MCP Clients&lt;/strong&gt;&lt;/summary&gt;
+
+For any MCP-compatible client, use this configuration:
+
+```json
+{
+  &quot;mcpServers&quot;: {
+    &quot;godot&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [&quot;@coding-solo/godot-mcp&quot;],
+      &quot;env&quot;: {
+        &quot;GODOT_PATH&quot;: &quot;/path/to/godot&quot;,
+        &quot;DEBUG&quot;: &quot;true&quot;
+      }
+    }
+  }
+}
+```
+
+&lt;/details&gt;
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `GODOT_PATH` | Path to the Godot executable (overrides automatic detection) |
+| `DEBUG` | Set to `&quot;true&quot;` to enable detailed server-side debug logging |
+
+&lt;details&gt;
+&lt;summary&gt;&lt;strong&gt;Building from Source&lt;/strong&gt;&lt;/summary&gt;
+
+```bash
+git clone https://github.com/Coding-Solo/godot-mcp.git
+cd godot-mcp
+npm install
+npm run build
+```
+
+Then point your MCP client to `build/index.js` instead of using `npx`.
+
+&lt;/details&gt;
+
+
+## Architecture
+
+The Godot MCP server uses a bundled GDScript approach for complex operations:
+
+1. **Direct Commands**: Simple operations like launching the editor or getting project info use Godot&apos;s built-in CLI commands directly.
+2. **Bundled Operations Script**: Complex operations like creating scenes or adding nodes use a single, comprehensive GDScript file (`godot_operations.gd`) that handles all operations.
+
+The bundled script accepts operation type and parameters as JSON, allowing for flexible and dynamic operation execution without generating temporary files for each operation.
+
+## Troubleshooting
+
+- **Godot Not Found**: Set the `GODOT_PATH` environment variable to your Godot executable path
+- **Connection Issues**: Ensure the server is running and restart your AI assistant
+- **Invalid Project Path**: Ensure the path points to a directory containing a `project.godot` file
+- **Build Issues**: Make sure all dependencies are installed by running `npm install`
+
+&lt;details&gt;
+&lt;summary&gt;&lt;strong&gt;Cursor-Specific Issues&lt;/strong&gt;&lt;/summary&gt;
+
+- Ensure the MCP server shows up and is enabled in Cursor settings (Settings &gt; MCP)
+- MCP tools can only be run using the Agent chat profile (Cursor Pro or Business subscription)
+- Use &quot;Yolo Mode&quot; to automatically run MCP tool requests
+
+&lt;/details&gt;
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.</file><file path="tsconfig.json">{
+  &quot;compilerOptions&quot;: {
+    &quot;target&quot;: &quot;ES2022&quot;,
+    &quot;module&quot;: &quot;ESNext&quot;,
+    &quot;moduleResolution&quot;: &quot;node&quot;,
+    &quot;outDir&quot;: &quot;./build&quot;,
+    &quot;rootDir&quot;: &quot;./src&quot;,
+    &quot;strict&quot;: true,
+    &quot;esModuleInterop&quot;: true,
+    &quot;skipLibCheck&quot;: true,
+    &quot;forceConsistentCasingInFileNames&quot;: true,
+    &quot;allowJs&quot;: true,
+    &quot;resolveJsonModule&quot;: true
+  },
+  &quot;include&quot;: [&quot;src/**/*&quot;],
+  &quot;exclude&quot;: [&quot;node_modules&quot;]
+}</file></files></repomix>
