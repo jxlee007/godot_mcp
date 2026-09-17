@@ -32,8 +32,21 @@ from typing import Any
 
 try:
     from mcp.server.fastmcp import FastMCP
-except ImportError:
-    from mcp.server.mcpserver import MCPServer as FastMCP
+except ImportError as err:
+    # mcp >= 2.0 renamed FastMCP to MCPServer with schema changes.
+    # Alert user to pin mcp<2 as mandated by pyproject.toml.
+    try:
+        from mcp.server.mcpserver import MCPServer as FastMCP
+        import warnings
+        warnings.warn(
+            "Running with mcp>=2 MCPServer fallback. Ensure client environment uses mcp>=1.3.0,<2 for official FastMCP schema mapping.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    except ImportError:
+        raise ImportError(
+            "FastMCP framework not found. Please install mcp>=1.3.0,<2: 'pip install \"mcp[cli]>=1.3.0,<2\"'"
+        ) from err
 
 # ---------------------------------------------------------------------------
 # Boot config
@@ -48,7 +61,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("godot_mcp")
 
-mcp = FastMCP("godot-mcp", version="1.0.0")
+mcp = FastMCP("godot-mcp")
 
 # Path to the bundled GDScript engine (co-located in the package)
 _SCRIPTS_DIR = Path(__file__).parent / "scripts"
@@ -1009,15 +1022,25 @@ def calculate_blend_space_2d(
 # SECTION 7 -- Camera & Cinematic tools
 # ===========================================================================
 
-def _catmull_to_bezier(pts: list[list[float]]) -> list[list[float]]:
-    """Convert Catmull-Rom waypoints to flat [in_h, position, out_h] list for Curve3D."""
+def _catmull_to_bezier(pts: list[list[float]], tension: float = 0.0) -> list[list[float]]:
+    """Convert Catmull-Rom waypoints to flat [in_h, position, out_h] list for Curve3D.
+
+    Args:
+        pts: List of [x, y, z] points.
+        tension: Tension / traction control (-1.0 to 1.0, default 0.0).
+                 0.0 = standard uniform velocity Catmull-Rom (tangent scale = 1/6).
+                 Negative (e.g. -0.5) = loose, sweeping tangents for dramatic hyper-fast swoops.
+                 Positive (e.g. 0.5) = tight, sharp tangents for high-precision track moves.
+    """
     n = len(pts)
     result: list[list[float]] = []
+    # Standard Catmull-Rom tangent factor is (1.0 - tension) / 6.0
+    factor = (1.0 - max(-2.0, min(1.0, tension))) / 6.0
     for i in range(n):
         prev = pts[max(0, i - 1)]
         curr = pts[i]
         nxt = pts[min(n - 1, i + 1)]
-        tang = [(nxt[j] - prev[j]) / 6.0 for j in range(3)]
+        tang = [(nxt[j] - prev[j]) * factor for j in range(3)]
         in_h = [curr[j] - tang[j] for j in range(3)]
         out_h = [curr[j] + tang[j] for j in range(3)]
         result.extend([in_h, curr, out_h])
@@ -1031,10 +1054,12 @@ def generate_bezier_camera_path(
     waypoints: list[dict],
     add_path_follow: bool = True,
     add_camera: bool = True,
+    tension: float = 0.0,
 ) -> str:
     """
     Bezier Camera Path Generator: Calculate Catmull-Rom bezier handles from world-space
     waypoints and serialize them as Path3D + Curve3D node blocks in a .tscn file.
+    Supports arc pans, dolly zooms, hyper-fast cinematic swoops, and orbital moves.
 
     Each waypoint dict must have:
       - 'position': [x, y, z] world position
@@ -1046,6 +1071,9 @@ def generate_bezier_camera_path(
         waypoints: List of waypoint dicts.
         add_path_follow: If True, add a PathFollow3D child.
         add_camera: If True, add a Camera3D child under PathFollow3D.
+        tension: Tension / speed-curve multiplier (-1.0 to 1.0, default 0.0).
+                 Use negative values (e.g. -0.5) for wide sweeping cinematic moves;
+                 positive values (e.g. 0.5) for crisp, tight corners.
     """
     try:
         p = Path(scene_path)
@@ -1055,7 +1083,7 @@ def generate_bezier_camera_path(
             return _err("At least 2 waypoints required")
         pts = [wp["position"] for wp in waypoints]
         tilts = [float(wp.get("tilt", 0.0)) for wp in waypoints]
-        handles = _catmull_to_bezier(pts)
+        handles = _catmull_to_bezier(pts, tension=tension)
 
         def _v3(v: list[float]) -> str:
             return f"{v[0]:.4f}, {v[1]:.4f}, {v[2]:.4f}"
@@ -1093,6 +1121,7 @@ def generate_bezier_camera_path(
             "message": f"Bezier camera path '{path_node_name}' with {len(waypoints)} waypoints",
             "curve_id": curve_id,
             "waypoints_count": len(waypoints),
+            "tension": tension,
         })
     except Exception as e:
         return _err(str(e))
