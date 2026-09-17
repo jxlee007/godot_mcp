@@ -10,23 +10,32 @@ the official **FastMCP** framework. Runs with ultra-low RAM via `uvx`.
 
 ## Quick Start
 
-```bash
-# Claude Code / Cline — one-liner
-GODOT_PATH=/path/to/godot4 uvx godot-mcp
+You can invoke this server over standard I/O (`stdio`) from anywhere on your machine instantly using `uvx` without manually cloning files or configuring virtual environments:
 
-# Or install permanently
-uv pip install -e .
-godot-mcp
+```bash
+# Run globally via uvx (Bypasses local setup completely)
+GODOT_PATH=/path/to/godot4 uvx --from git+https://github.com/your-fork/godot-mcp godot-mcp
+
+# Local development installation (For active contributors)
+git clone https://github.com/your-fork/godot-mcp
+cd godot-mcp
+uv tool install --editable .
 ```
 
 ## MCP Client Configuration
 
+Add this structural configuration block straight into your global client matrix environment profile (e.g., `~/.gemini/antigravity-cli/settings.json` or Claude / Cline settings):
+
 ```json
 {
   "mcpServers": {
-    "godot": {
+    "godot-arcane": {
       "command": "uvx",
-      "args": ["godot-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/your-fork/godot-mcp",
+        "godot-mcp"
+      ],
       "env": {
         "GODOT_PATH": "/path/to/godot4",
         "DEBUG": "false"
@@ -81,7 +90,7 @@ godot-mcp
 ### Camera & Cinematic (3)
 | Tool | Description |
 |---|---|
-| `generate_bezier_camera_path` | Catmull-Rom bezier Path3D + PathFollow3D + Camera3D |
+| `generate_bezier_camera_path` | Catmull-Rom bezier Path3D + PathFollow3D + Camera3D with tension control |
 | `inject_lookat_tracking` | Generate LookAt tracking GDScript for Camera3D |
 | `build_camera_switcher_timeline` | Write Animation that switches Camera3D.current at timestamps |
 
@@ -96,15 +105,6 @@ godot-mcp
 |---|---|
 | `toggle_movie_maker` | Edit project.godot to enable/disable Movie Maker mode |
 | `run_headless_diagnostics` | Validate imports, UIDs, shader entry points via Godot CLI |
-
-## MCP Resources
-
-The server exposes read-only resource URIs that AI models and MCP clients can inspect directly:
-
-| Resource URI | Description |
-|---|---|
-| `godot://engine/operations_template` | Complete raw source code of the underlying `godot_operations.gd` engine for parameter and structural verification. |
-| `godot://engine/operations_reference` | Markdown reference guide detailing the 7 headless operations, input schemas, and return formats. |
 
 ## Architecture
 
