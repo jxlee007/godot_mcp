@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 keywords = ["godot", "mcp", "ai", "claude", "gamedev", "fastmcp"]
-authors = [{ name = "godot-mcp contributors" }]
+authors = [{ name = "Jxlee007" }, { name = "godot-mcp contributors" }]
 
 dependencies = [
     "mcp[cli]>=1.3.0,<2",
@@ -20,7 +20,7 @@ dependencies = [
 godot-mcp = "godot_mcp.server:main"
 
 [project.urls]
-Repository = "https://github.com/your-fork/godot-mcp"
+Repository = "https://github.com/jxlee007/godot_mcp"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/godot_mcp"]

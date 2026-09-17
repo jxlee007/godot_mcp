@@ -14,11 +14,11 @@ You can invoke this server over standard I/O (`stdio`) from anywhere on your mac
 
 ```bash
 # Run globally via uvx (Bypasses local setup completely)
-GODOT_PATH=/path/to/godot4 uvx --from git+https://github.com/your-fork/godot-mcp godot-mcp
+GODOT_PATH=/path/to/godot4 uvx --from git+https://github.com/jxlee007/godot_mcp godot-mcp
 
 # Local development installation (For active contributors)
-git clone https://github.com/your-fork/godot-mcp
-cd godot-mcp
+git clone https://github.com/jxlee007/godot_mcp
+cd godot_mcp
 uv tool install --editable .
 ```
 
@@ -29,11 +29,11 @@ Add this structural configuration block straight into your global client matrix 
 ```json
 {
   "mcpServers": {
-    "godot-arcane": {
+    "godot_render": {
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/your-fork/godot-mcp",
+        "git+https://github.com/jxlee007/godot_mcp",
         "godot-mcp"
       ],
       "env": {
