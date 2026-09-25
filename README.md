@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://python.org)
 [![FastMCP](https://img.shields.io/badge/FastMCP-1.3%2B-green)](https://github.com/modelcontextprotocol/python-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red)](LICENSE)
+[![M8ven Trust](https://m8ven.ai/badge/jxlee007-godot-mcp-2ckujn)](https://m8ven.ai/mcp/jxlee007-godot-mcp-2ckujn)
 
 A **zero Node.js** Model Context Protocol server for Godot 4 — translated from
 `Coding-Solo/godot-mcp` and `youichi-uda/godot-mcp-pro` into pure Python using
