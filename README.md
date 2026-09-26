@@ -16,8 +16,8 @@ the official **FastMCP** framework. Runs with ultra-low RAM via `uvx`.
 You can invoke this server over standard I/O (`stdio`) from anywhere on your machine instantly using `uvx` without manually cloning files or configuring virtual environments:
 
 ```bash
-# Run globally via uvx (Bypasses local setup completely)
-GODOT_PATH=/path/to/godot4 uvx --from git+https://github.com/jxlee007/godot_mcp godot-mcp
+# Run globally via uvx from PyPI (Bypasses local setup completely)
+GODOT_PATH=/path/to/godot4 uvx --from godot-mcp-uvx godot-mcp
 
 # Local development installation (For active contributors)
 git clone https://github.com/jxlee007/godot_mcp
@@ -36,7 +36,7 @@ Add this structural configuration block straight into your global client matrix 
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/jxlee007/godot_mcp",
+        "godot-mcp-uvx",
         "godot-mcp"
       ],
       "env": {

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "godot-mcp"
+name = "godot-mcp-uvx"
 version = "1.0.0"
 description = "Pure-Python FastMCP server for Godot 4 — headless scene ops + animation/cinematic text pipeline. Zero Node.js."
 readme = "README.md"

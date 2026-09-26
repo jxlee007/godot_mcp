@@ -12,7 +12,7 @@
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "godot-mcp",
+      "identifier": "godot-mcp-uvx",
       "version": "1.0.0",
       "runtime": "python",
       "runtimeVersion": ">=3.10",
@@ -23,7 +23,7 @@
         "command": "uvx",
         "args": [
           "--from",
-          "godot-mcp",
+          "godot-mcp-uvx",
           "godot-mcp"
         ],
         "env": {
