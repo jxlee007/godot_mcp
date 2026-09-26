@@ -1,5 +1,7 @@
 # godot-mcp — Pure Python FastMCP Server for Godot 4
 
+<!-- mcp-name: io.github.jxlee007/godot-mcp -->
+
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://python.org)
 [![FastMCP](https://img.shields.io/badge/FastMCP-1.3%2B-green)](https://github.com/modelcontextprotocol/python-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red)](LICENSE)
