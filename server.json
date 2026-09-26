@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.jxlee007/godot-mcp",
   "title": "Godot MCP",
-  "description": "Pure-Python FastMCP server for Godot 4 — 28 tools covering headless scene operations, animation pipelines, cinematic camera paths, NPR materials, and movie-maker pipeline automation. Zero Node.js. Runs via uvx.",
-  "version": "1.0.3",
+  "description": "Pure-Python FastMCP server for Godot 4 — 28 headless & animation tools. Runs via uvx.",
+  "version": "1.0.4",
   "homepage": "https://github.com/jxlee007/godot_mcp",
   "repository": {
     "url": "https://github.com/jxlee007/godot_mcp",
-    "source": "https://github.com/jxlee007/godot_mcp/blob/main/src/godot_mcp/server.py"
+    "source": "github"
   },
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "godot-mcp-uvx",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "runtime": "python",
       "runtimeVersion": ">=3.10",
       "transport": {

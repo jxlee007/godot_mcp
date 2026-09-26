@@ -74,9 +74,8 @@ jobs:
           sudo chmod +x /usr/local/bin/mcp-publisher
           mcp-publisher --help
 
-      - name: Execute MCP Registry Sync
-        env:
-          # Required for browserless machine authentication to the registry repository
-          GITHUB_TOKEN: ${{ secrets.REGISTRY_PUBLISH_TOKEN }} 
-        run: mcp-publisher publish server.json
+      - name: Authenticate and Publish to MCP Registry
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish
 
