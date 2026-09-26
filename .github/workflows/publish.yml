@@ -57,6 +57,8 @@ jobs:
 
       - name: Publish to PyPI via Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   publish-mcp-registry:
     name: Sync to Official MCP Registry
@@ -70,10 +72,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Execute MCP Publisher
         env:
           # Required for browserless machine authentication to the registry repository
           GITHUB_TOKEN: ${{ secrets.REGISTRY_PUBLISH_TOKEN }} 
-        run: npx @modelcontextprotocol/mcp-publisher@latest publish server.json
+        run: npx --yes @modelcontextprotocol/mcp-publisher@latest publish server.json
