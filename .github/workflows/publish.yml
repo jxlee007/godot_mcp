@@ -1,0 +1,79 @@
+name: Publish Package & Registry Update
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Triggers only on version release tags like v1.0.0
+
+permissions:
+  contents: read
+  id-token: write # Required for secure Trusted Publishing to PyPI
+
+jobs:
+  test-and-validate:
+    name: Run Tests & Check JSON Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment
+        uses: --astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Validate Local Manifest Syntax
+        run: |
+          uv run python -c "
+          import json
+          for file in ['server.json', 'glama.json']:
+              with open(file, 'r') as f:
+                  json.load(f)
+          print('Manifest validation succeeded.')
+          "
+
+      - name: Run Test Suite
+        run: uv run --extra dev pytest tests/ -v
+
+  publish-pypi:
+    name: Build & Release to PyPI
+    needs: test-and-validate
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment
+        uses: --astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Build Wheel & Source Distribution
+        run: uv build
+
+      - name: Publish to PyPI via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-mcp-registry:
+    name: Sync to Official MCP Registry
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js for CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Execute MCP Publisher
+        env:
+          # Required for browserless machine authentication to the registry repository
+          GITHUB_TOKEN: ${{ secrets.REGISTRY_PUBLISH_TOKEN }} 
+        run: npx @modelcontextprotocol/mcp-publisher@latest publish server.json
